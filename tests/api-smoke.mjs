@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+const origin=process.env.TWMG_TEST_ORIGIN||'http://127.0.0.1:5173';
+let r=await fetch(origin+'/api/finance');assert.equal(r.status,401);
+r=await fetch(origin+'/signin-with-chatgpt?return_to=/',{redirect:'manual'});const cookie=r.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');assert.ok(cookie);
+const request=async(body)=>{const r=await fetch(origin+'/api/finance',{method:'PUT',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:r.status,data:await r.json()}};
+const load=async(id)=>{const r=await fetch(origin+'/api/finance'+(id?'?profile='+id:''),{headers:{Cookie:cookie}});return await r.json()};
+let initial=await load();const p=initial.profile,a=initial.data.accounts[0];assert.ok(a);
+let x=await request({action:'save',profile:p,kind:'transactions',value:{id:'smoke-'+crypto.randomUUID(),name:'API verification',type:'expense',amount:1250,account:a.id,category:'Other',date:'2026-10-20'}});assert.equal(x.status,200);
+const after=await load(p);const tx=after.data.transactions.find(x=>x.name==='API verification');assert.ok(tx);assert.equal(tx.amount,1250);
+x=await request({profile:p,kind:'transactions',value:{...tx,amount:0}});assert.equal(x.status,400);
+x=await request({profile:p,kind:'transactions',value:{...tx,account:'foreign-account'}});assert.equal(x.status,400);
+x=await request({profile:p,kind:'transactions',value:{...tx,type:'transfer',to:a.id}});assert.equal(x.status,400);
+let second=initial.profiles.find(x=>x.id!==p);if(!second){x=await request({action:'profile',value:{name:'API isolation',country:'Germany',currency:'EUR'}});assert.equal(x.status,200);second={id:x.data.id};}
+x=await request({profile:second.id,kind:'transactions',value:{...tx}});assert.equal(x.status,400);
+const separate=await load(second.id);assert.ok(!separate.data.transactions.some(x=>x.id===tx.id));
+x=await request({profile:p,kind:'transactions',action:'delete',id:tx.id});assert.equal(x.status,200);
+const historyResponse=await fetch(origin+`/api/finance?profile=${p}&history=${tx.id}`,{headers:{Cookie:cookie}});const history=await historyResponse.json();assert.equal(history.history.length,2);
+console.log('PASS: authentication, save/reload, input validation, profile isolation, delete and audit history');
+
+const groupId='group-'+crypto.randomUUID();
+const entries=[{id:'one',name:'Groceries',amount:12500,date:'2026-10-20',paidBy:'Meera'},{id:'two',name:'Taxi',amount:5000,date:'2026-10-20',paidBy:'Arjun'}];
+const group={id:groupId,name:'Group verification',amount:17500,paid:0,members:3,party:'Meera, Arjun, Me',expenses:entries};
+x=await request({profile:p,kind:'shared',value:group});assert.equal(x.status,200);
+let saved=(await load(p)).data.shared.find(x=>x.id===groupId);assert.equal(saved.expenses.length,2);assert.equal(saved.amount,17500);
+x=await request({profile:p,kind:'shared',value:{...group,amount:1}});assert.equal(x.status,400);
+x=await request({profile:p,kind:'shared',value:{...group,paid:20000}});assert.equal(x.status,400);
+x=await request({profile:p,kind:'shared',value:{...group,expenses:[...entries,{id:'three',name:'Dinner',amount:10000,date:'2026-10-21',paidBy:'Me'}],amount:27500}});assert.equal(x.status,200);
+saved=(await load(p)).data.shared.find(x=>x.id===groupId);assert.equal(saved.expenses.length,3);assert.equal(saved.amount,27500);
+assert.equal((await load(p)).data.transactions.length,initial.data.transactions.length);
+x=await request({profile:p,kind:'shared',action:'delete',id:groupId});assert.equal(x.status,200);
+const cardId='card-'+crypto.randomUUID();const card={id:cardId,name:'Card verification',type:'Credit card',currency:'INR',opening:0,limit:5000000,due:'2026-11-05',cardType:'Mastercard',lastFour:'0123',color:'#70528b'};
+x=await request({profile:p,kind:'accounts',value:card});assert.equal(x.status,200);
+saved=(await load(p)).data.accounts.find(x=>x.id===cardId);assert.equal(saved.lastFour,'0123');assert.equal(saved.cardType,'Mastercard');assert.equal(saved.color,'#70528b');
+x=await request({profile:p,kind:'accounts',value:{...card,lastFour:'12345'}});assert.equal(x.status,400);
+x=await request({profile:p,kind:'accounts',value:{...card,type:'Bank account'}});assert.equal(x.status,200);
+saved=(await load(p)).data.accounts.find(x=>x.id===cardId);assert.ok(!('limit' in saved));assert.ok(!('lastFour' in saved));
+x=await request({profile:p,kind:'accounts',action:'delete',id:cardId});assert.equal(x.status,200);
+console.log('PASS: grouped transactions persist and sum correctly, reject mismatched totals, avoid ledger double-counting, and card reference/color persist with conditional fields');

@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import type {Transaction} from '../lib/finance.ts';
+import {balance,totals,validateTransaction,seed} from '../lib/finance.ts';
+const data=seed();
+const transfer:Transaction={id:'t',name:'Card payment',type:'transfer',amount:100000,account:'bank',to:'card',date:'2026-10-20',category:'Other'};
+test('Transfers and credit card repayments preserve net worth and do not inflate income or spending',()=>{const before=data.accounts.reduce((s,a)=>s+balance(a,data.transactions),0);const ts=[...data.transactions,transfer];assert.equal(data.accounts.reduce((s,a)=>s+balance(a,ts),0),before);assert.deepEqual(totals(ts),totals(data.transactions));assert.equal(balance(data.accounts[3],ts)-balance(data.accounts[3],data.transactions),100000)});
+test('Expense on a credit card reduces net worth exactly once',()=>{const t:Transaction={...transfer,type:'expense',to:undefined,account:'card'};assert.equal(balance(data.accounts[3],[t]),data.accounts[3].opening-100000);assert.equal(totals([t]).expense,100000)});
+test('reject invalid amounts, cross-profile accounts, same-account transfers and mismatched splits',()=>{for(const value of [{...transfer,amount:0},{...transfer,amount:1.5},{...transfer,account:'foreign'},{...transfer,to:'bank'},{...transfer,splits:[{category:'Food',amount:123}]}])assert.throws(()=>validateTransaction(value,data.accounts))});
+test('Cross-currency transfer requires explicit received amount',()=>{const accounts=[...data.accounts,{id:'eur',name:'Euro',currency:'EUR',type:'Bank account',opening:0}];assert.throws(()=>validateTransaction({...transfer,to:'eur'},accounts));assert.doesNotThrow(()=>validateTransaction({...transfer,to:'eur',received:1000},accounts));assert.equal(balance(accounts[4],[{...transfer,to:'eur',received:1000}]),1000)});
+test('Integer minor units stay exact with repeated small expenses',()=>{const t:Transaction={...transfer,type:'expense',amount:10,account:'cash'};assert.equal(balance(data.accounts[2],Array(1000).fill(t)),data.accounts[2].opening-10000)});

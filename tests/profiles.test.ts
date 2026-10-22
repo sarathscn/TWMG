@@ -1,0 +1,4 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {profileDetailsSchema,countryCurrencies} from '../lib/profile.ts';
+test('Profile customization validates profile identity fields',()=>{const p=profileDetailsSchema.parse({name:' Personal ',country:'India',bio:'My everyday life',emoji:'🌿',color:'#2d6048'});assert.equal(p.name,'Personal');assert.equal(countryCurrencies[p.country],'INR');assert.throws(()=>profileDetailsSchema.parse({...p,bio:'x'.repeat(161)}));assert.throws(()=>profileDetailsSchema.parse({...p,avatar:'https://external.example/photo.png'}));assert.throws(()=>profileDetailsSchema.parse({...p,avatar:'data:image/svg+xml;base64,PHN2Zz4='}));assert.equal(profileDetailsSchema.parse({...p,avatar:'data:image/jpeg;base64,/9j/2Q=='}).avatar,'data:image/jpeg;base64,/9j/2Q==')});
