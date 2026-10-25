@@ -51,3 +51,8 @@ test('Notifications list every open reminder, open their records, and clear by s
  assert.match(app,/\{ recurring: 'recurring', card: 'accounts', shared: 'shared' \}/,'bills, cards and groups open their own transactions');
  assert.ok(!/data\.recurring\.map\(x => <div key=\{x\.id\}><span>\{x\.name\}<small>/.test(app),'the old bills-only list is gone');
 });
+test('The notification list stacks vertically and the popover keeps its own width',()=>{
+ const css=readFileSync('app/globals.css','utf8');
+ assert.match(css,/\.popover\.notifications>\.notification-list\{display:flex;flex-direction:column/,'the list overrides the old ".notifications>div" row rule');
+ assert.match(css,/\.topbar \.popover\.notifications\{[^}]*max-width:none/,'the popover is not squeezed to the bell button width');
+});
