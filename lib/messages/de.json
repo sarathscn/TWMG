@@ -681,7 +681,25 @@
   "Custom color": "Eigene Farbe",
   "Hue": "Farbton",
   "Hex color": "Hex-Farbe",
-  "Saturation and brightness": "Sättigung und Helligkeit"
+  "Saturation and brightness": "Sättigung und Helligkeit",
+  "Available: ": "Verfügbar: ",
+  "Actions": "Aktionen",
+  "Get set up": "Einrichten",
+  "A few essentials to make TWMG yours.": "Ein paar Grundlagen, um TWMG zu deinem zu machen.",
+  "Hide setup suggestions": "Einrichtungsvorschläge ausblenden",
+  "Start": "Starten",
+  "Add your first account": "Füge dein erstes Konto hinzu",
+  "A bank account, card or savings where money lives.": "Ein Bankkonto, eine Karte oder Ersparnisse, wo dein Geld liegt.",
+  "Add a cash wallet": "Füge eine Bargeldbörse hinzu",
+  "Track the cash in your pocket. It can never go below zero.": "Behalte dein Bargeld im Blick. Es kann nie unter null fallen.",
+  "Review payment methods": "Zahlungsmethoden prüfen",
+  "Turn on the UPI apps, cards and wallets you actually use.": "Aktiviere die UPI-Apps, Karten und Wallets, die du wirklich nutzt.",
+  "Review categories": "Kategorien prüfen",
+  "Rename, recolor or add the categories you spend on.": "Benenne, färbe oder ergänze die Kategorien, für die du Geld ausgibst.",
+  "Set a monthly budget": "Lege ein Monatsbudget fest",
+  "Pick a category and a limit to stay on track.": "Wähle eine Kategorie und ein Limit, um im Rahmen zu bleiben.",
+  "Record a transaction": "Erfasse eine Transaktion",
+  "Add today’s spending or your latest income.": "Füge die heutigen Ausgaben oder dein letztes Einkommen hinzu."
 }
 
 

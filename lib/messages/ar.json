@@ -681,7 +681,25 @@
   "Custom color": "لون مخصص",
   "Hue": "درجة اللون",
   "Hex color": "لون سداسي عشري",
-  "Saturation and brightness": "التشبع والسطوع"
+  "Saturation and brightness": "التشبع والسطوع",
+  "Available: ": "المتاح: ",
+  "Actions": "الإجراءات",
+  "Get set up": "ابدأ الإعداد",
+  "A few essentials to make TWMG yours.": "بعض الأساسيات لتجعل TWMG خاصًا بك.",
+  "Hide setup suggestions": "إخفاء اقتراحات الإعداد",
+  "Start": "ابدأ",
+  "Add your first account": "أضف حسابك الأول",
+  "A bank account, card or savings where money lives.": "حساب مصرفي أو بطاقة أو مدخرات حيث يوجد المال.",
+  "Add a cash wallet": "أضف محفظة نقدية",
+  "Track the cash in your pocket. It can never go below zero.": "تتبّع النقود في جيبك. لا يمكن أن تنخفض أبدًا عن الصفر.",
+  "Review payment methods": "راجع طرق الدفع",
+  "Turn on the UPI apps, cards and wallets you actually use.": "فعّل تطبيقات UPI والبطاقات والمحافظ التي تستخدمها فعلًا.",
+  "Review categories": "راجع الفئات",
+  "Rename, recolor or add the categories you spend on.": "أعد تسمية الفئات التي تنفق عليها أو غيّر لونها أو أضفها.",
+  "Set a monthly budget": "حدّد ميزانية شهرية",
+  "Pick a category and a limit to stay on track.": "اختر فئة وحدًا للبقاء على المسار.",
+  "Record a transaction": "سجّل معاملة",
+  "Add today’s spending or your latest income.": "أضف إنفاق اليوم أو أحدث دخل لك."
 }
 
 

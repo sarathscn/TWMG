@@ -681,7 +681,25 @@
   "Custom color": "कस्टम रंग",
   "Hue": "रंगत",
   "Hex color": "हेक्स रंग",
-  "Saturation and brightness": "संतृप्ति और चमक"
+  "Saturation and brightness": "संतृप्ति और चमक",
+  "Available: ": "उपलब्ध: ",
+  "Actions": "कार्य",
+  "Get set up": "सेटअप करें",
+  "A few essentials to make TWMG yours.": "TWMG को अपना बनाने के लिए कुछ ज़रूरी चीज़ें।",
+  "Hide setup suggestions": "सेटअप सुझाव छिपाएँ",
+  "Start": "शुरू करें",
+  "Add your first account": "अपना पहला खाता जोड़ें",
+  "A bank account, card or savings where money lives.": "बैंक खाता, कार्ड या बचत जहाँ पैसा रहता है।",
+  "Add a cash wallet": "नकद बटुआ जोड़ें",
+  "Track the cash in your pocket. It can never go below zero.": "अपनी जेब की नकदी ट्रैक करें। यह कभी शून्य से नीचे नहीं जा सकती।",
+  "Review payment methods": "भुगतान के तरीके देखें",
+  "Turn on the UPI apps, cards and wallets you actually use.": "जिन UPI ऐप, कार्ड और वॉलेट का आप उपयोग करते हैं उन्हें चालू करें।",
+  "Review categories": "श्रेणियाँ देखें",
+  "Rename, recolor or add the categories you spend on.": "जिन श्रेणियों पर आप खर्च करते हैं उनका नाम, रंग बदलें या जोड़ें।",
+  "Set a monthly budget": "मासिक बजट तय करें",
+  "Pick a category and a limit to stay on track.": "सही राह पर रहने के लिए एक श्रेणी और सीमा चुनें।",
+  "Record a transaction": "लेन-देन दर्ज करें",
+  "Add today’s spending or your latest income.": "आज का खर्च या अपनी नवीनतम आय जोड़ें।"
 }
 
 

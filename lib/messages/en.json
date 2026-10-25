@@ -681,7 +681,25 @@
   "Custom color": "Custom color",
   "Hue": "Hue",
   "Hex color": "Hex color",
-  "Saturation and brightness": "Saturation and brightness"
+  "Saturation and brightness": "Saturation and brightness",
+  "Available: ": "Available: ",
+  "Actions": "Actions",
+  "Get set up": "Get set up",
+  "A few essentials to make TWMG yours.": "A few essentials to make TWMG yours.",
+  "Hide setup suggestions": "Hide setup suggestions",
+  "Start": "Start",
+  "Add your first account": "Add your first account",
+  "A bank account, card or savings where money lives.": "A bank account, card or savings where money lives.",
+  "Add a cash wallet": "Add a cash wallet",
+  "Track the cash in your pocket. It can never go below zero.": "Track the cash in your pocket. It can never go below zero.",
+  "Review payment methods": "Review payment methods",
+  "Turn on the UPI apps, cards and wallets you actually use.": "Turn on the UPI apps, cards and wallets you actually use.",
+  "Review categories": "Review categories",
+  "Rename, recolor or add the categories you spend on.": "Rename, recolor or add the categories you spend on.",
+  "Set a monthly budget": "Set a monthly budget",
+  "Pick a category and a limit to stay on track.": "Pick a category and a limit to stay on track.",
+  "Record a transaction": "Record a transaction",
+  "Add today’s spending or your latest income.": "Add today’s spending or your latest income."
 }
 
 

@@ -681,7 +681,25 @@
   "Custom color": "ഇഷ്ടാനുസൃത നിറം",
   "Hue": "വർണ്ണഭേദം",
   "Hex color": "ഹെക്സ് നിറം",
-  "Saturation and brightness": "സാച്ചുറേഷനും തെളിച്ചവും"
+  "Saturation and brightness": "സാച്ചുറേഷനും തെളിച്ചവും",
+  "Available: ": "ലഭ്യം: ",
+  "Actions": "പ്രവർത്തനങ്ങൾ",
+  "Get set up": "സജ്ജമാക്കുക",
+  "A few essentials to make TWMG yours.": "TWMG നിങ്ങളുടേതാക്കാൻ ചില അത്യാവശ്യങ്ങൾ.",
+  "Hide setup suggestions": "സജ്ജീകരണ നിർദ്ദേശങ്ങൾ മറയ്ക്കുക",
+  "Start": "തുടങ്ങുക",
+  "Add your first account": "നിങ്ങളുടെ ആദ്യ അക്കൗണ്ട് ചേർക്കുക",
+  "A bank account, card or savings where money lives.": "പണം സൂക്ഷിക്കുന്ന ബാങ്ക് അക്കൗണ്ട്, കാർഡ് അല്ലെങ്കിൽ സേവിംഗ്സ്.",
+  "Add a cash wallet": "ഒരു ക്യാഷ് വാലറ്റ് ചേർക്കുക",
+  "Track the cash in your pocket. It can never go below zero.": "നിങ്ങളുടെ പോക്കറ്റിലെ പണം ട്രാക്ക് ചെയ്യുക. ഇത് ഒരിക്കലും പൂജ്യത്തിന് താഴെ പോകില്ല.",
+  "Review payment methods": "പേയ്മെന്റ് രീതികൾ പരിശോധിക്കുക",
+  "Turn on the UPI apps, cards and wallets you actually use.": "നിങ്ങൾ ശരിക്കും ഉപയോഗിക്കുന്ന UPI ആപ്പുകൾ, കാർഡുകൾ, വാലറ്റുകൾ ഓണാക്കുക.",
+  "Review categories": "വിഭാഗങ്ങൾ പരിശോധിക്കുക",
+  "Rename, recolor or add the categories you spend on.": "നിങ്ങൾ ചെലവഴിക്കുന്ന വിഭാഗങ്ങൾ പുനർനാമകരണം ചെയ്യുക, നിറം മാറ്റുക അല്ലെങ്കിൽ ചേർക്കുക.",
+  "Set a monthly budget": "പ്രതിമാസ ബജറ്റ് സജ്ജമാക്കുക",
+  "Pick a category and a limit to stay on track.": "ശരിയായ പാതയിൽ തുടരാൻ ഒരു വിഭാഗവും പരിധിയും തിരഞ്ഞെടുക്കുക.",
+  "Record a transaction": "ഒരു ഇടപാട് രേഖപ്പെടുത്തുക",
+  "Add today’s spending or your latest income.": "ഇന്നത്തെ ചെലവോ ഏറ്റവും പുതിയ വരുമാനമോ ചേർക്കുക."
 }
 
 

@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/finance.test.ts tests/shared-card.test.ts tests/reliability-splits.test.ts tests/profiles.test.ts tests/preferences.test.ts tests/ledgers.test.ts tests/localization.test.ts"
+    "test": "node --experimental-strip-types --test tests/finance.test.ts tests/shared-card.test.ts tests/reliability-splits.test.ts tests/profiles.test.ts tests/preferences.test.ts tests/ledgers.test.ts tests/localization.test.ts tests/cash-wallet.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
