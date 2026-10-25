@@ -30,6 +30,10 @@ export function Swipeable({ as: Tag = 'div', onEdit, onDelete, children, classNa
         onPointerDown={(e: React.PointerEvent<HTMLElement>) => {
             swiped.current = false;
             if (!enabled || e.pointerType === 'mouse') return;
+            // Rows nest (a group card holds swipeable transactions): the innermost row owns the gesture.
+            const native = e.nativeEvent as PointerEvent & { twmgSwipe?: boolean };
+            if (native.twmgSwipe) return;
+            native.twmgSwipe = true;
             start.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false };
             clearTimeout(hold.current);
             hold.current = setTimeout(() => { if (start.current && !start.current.locked) { swiped.current = true; start.current = null; navigator.vibrate?.(12); setMenu(true); } }, HOLD);

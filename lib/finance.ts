@@ -1,10 +1,13 @@
 export type Account={id:string;name:string;type:string;country?:string;currency:string;opening:number;limit?:number;due?:string;cardType?:string;lastFour?:string;color?:string;emoji?:string;institution?:string;reference?:string};
 // Short identifier shown next to an account: "HDFC Bank •••• 1234", "Paytm · ref sarath@ok".
 export function accountReference(a:Pick<Account,'type'|'institution'|'lastFour'|'reference'|'cardType'>){const parts=[a.type==='Credit card'?a.cardType:a.institution,a.lastFour?'•••• '+a.lastFour:a.reference].filter(Boolean);return parts.join(' · ')}
-export type Party={id:string;name:string;notes?:string;color?:string;emoji?:string};
+// sharedGroupIds: the split groups this person is a member of (kept in sync by the server).
+// autoCreated: the party was added by a group, so it can be removed with its last group.
+export type Party={id:string;name:string;notes?:string;color?:string;emoji?:string;sharedGroupIds?:string[];autoCreated?:boolean};
 export type Transaction={id:string;name:string;type:'income'|'expense'|'transfer';amount:number;account:string;to?:string;received?:number;category:string;date:string;partyId?:string;debtAction?:'lend'|'borrow'|'collect'|'repay';sharedGroupId?:string;recurringId?:string;paidBy?:string;participants?:string[];paymentMethod?:string;paymentMethodName?:string;notes?:string;tags?:string;splits?:{category:string;amount:number}[]};
 export type SharedExpense={id:string;name:string;amount:number;date:string;paidBy:string;notes?:string;participants?:string[];transactionId?:string};
-export type Item={id:string;name:string;amount:number;target?:number;category?:string;due?:string;type?:string;paid?:number;party?:string;members?:number;status?:string;expenses?:SharedExpense[];memberNames?:string[];color?:string;emoji?:string};
+// self: the member name that stands for the signed-in user in a shared group.
+export type Item={id:string;name:string;amount:number;target?:number;category?:string;due?:string;type?:string;paid?:number;party?:string;members?:number;status?:string;expenses?:SharedExpense[];memberNames?:string[];self?:string;color?:string;emoji?:string};
 export function sharedEntries(group:Item):SharedExpense[]{return group.expenses??(group.amount>0?[{id:'opening-'+group.id,name:'Existing group expenses',amount:group.amount,date:group.due||new Date().toISOString().slice(0,10),paidBy:'',notes:'Preserved from the original group balance.'}]:[])}
 export function sharedTotal(expenses:SharedExpense[]){return expenses.reduce((sum,e)=>sum+e.amount,0)}
 export function parseMemberNames(value:string){return value.split(/[,\n]/).map(n=>n.trim()).filter(Boolean)}
@@ -19,6 +22,43 @@ export function splitSharedExpense(expense:SharedExpense,members:string[]){
  const selected=members.filter(name=>!expense.participants||expense.participants.includes(name));
  const base=selected.length?Math.floor(expense.amount/selected.length):0,remainder=selected.length?expense.amount%selected.length:0;
  return selected.map((name,i)=>({name,amount:base+(i<remainder?1:0)}));
+}
+const same=(a:string,b:string)=>a.trim().toLowerCase()===b.trim().toLowerCase();
+const selfWords=['me','myself','you'];
+// The member who is the signed-in user: the saved one, or for older groups a member named
+// after the user or "Me"/"You".
+export function groupSelf(group:Item,userName=''):string|undefined{const names=groupMembers(group);if(group.self&&names.includes(group.self))return group.self;return names.find(n=>(userName&&same(n,userName))||selfWords.includes(n.trim().toLowerCase()))}
+// Members in `before` that are gone from `after` (names compare case-insensitively).
+export function removedMembers(before:string[],after:string[]){return before.filter(n=>!after.some(m=>same(m,n)))}
+// Group transactions after `removed` members leave: they drop out of every split, so the
+// remaining participants share each amount. A removed payer, or a transaction left with
+// nobody to split it, can't be resolved automatically and is reported instead.
+export function withoutMembers(expenses:SharedExpense[],removed:string[]){
+ const gone=(n:string)=>removed.some(r=>same(r,n));
+ const payer=expenses.find(e=>e.paidBy&&gone(e.paidBy));
+ if(payer)throw Error(`${payer.paidBy} paid for “${payer.name}”. Change who paid before removing them from the group.`);
+ return expenses.map(e=>{if(!e.participants?.some(gone))return e;const participants=e.participants.filter(n=>!gone(n));if(!participants.length)throw Error(`“${e.name}” would have nobody left to split it. Edit or delete it first.`);return {...e,participants}});
+}
+// Debt parties that follow a split group's members: every member except the user has a party
+// (an existing one with the same name is reused, never duplicated). When a member leaves, or the
+// group is deleted, the link is dropped, and a party the group created is removed once nothing
+// else uses it. `before`/`after` are the group before and after the change (undefined = none).
+export function partySyncPlan(parties:Party[],transactions:Pick<Transaction,'partyId'>[],before:Item|undefined,after:Item|undefined,newId:()=>string=()=>crypto.randomUUID()){
+ const gid=(after||before)?.id;if(!gid)return {upserts:[] as Party[],deletes:[] as Party[]};
+ const others=(g?:Item)=>{if(!g)return [];const self=groupSelf(g);return groupMembers(g).filter(n=>n!==self)};
+ const next=others(after);
+ const list=parties.map(p=>({...p})),changed=new Set<string>(),deletes:Party[]=[];
+ for(const name of next){
+  const party=list.find(p=>same(p.name,name));
+  if(!party){const created:Party={id:newId(),name:name.trim().slice(0,120),sharedGroupIds:[gid],autoCreated:true};list.push(created);changed.add(created.id);continue}
+  if(!party.sharedGroupIds?.includes(gid)){party.sharedGroupIds=[...(party.sharedGroupIds||[]),gid];changed.add(party.id)}
+ }
+ for(const party of list){
+  if(!party.sharedGroupIds?.includes(gid)||next.some(n=>same(n,party.name)))continue;
+  party.sharedGroupIds=party.sharedGroupIds.filter(id=>id!==gid);
+  if(party.autoCreated&&!party.sharedGroupIds.length&&!transactions.some(t=>t.partyId===party.id)){deletes.push(party);changed.delete(party.id)}else changed.add(party.id);
+ }
+ return {upserts:list.filter(p=>changed.has(p.id)),deletes};
 }
 export function sharedMemberBalances(group:Item){
  const names=groupMembers(group),entries=sharedEntries(group);

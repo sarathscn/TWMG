@@ -1,8 +1,9 @@
 'use client';
 import { useI18n } from './UIProvider';
-import { Check, Pipette } from 'lucide-react';
+import { Check, Pipette, Search, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { hexColor, readableOn, recordColors, recordColorNames, recordEmojis } from '../../lib/card-options';
+import { hexColor, readableOn, recordColors, recordColorNames, emojiCatalog } from '../../lib/card-options';
 export type Appearance = {
     color?: string;
     emoji?: string;
@@ -68,6 +69,8 @@ export function ColorPicker({ value, onChange, legend, presets = recordColors }:
         </div>}
     </fieldset>;
 }
+// The record icon field: shows only the chosen emoji, and opens a bottom sheet with a
+// searchable, categorised emoji collection. Drawn by the app, so it follows the theme.
 export function IconPicker({ emoji, onEmoji, legend, defaultLabel = '·' }: {
     emoji?: string;
     onEmoji: (emoji: string) => void;
@@ -75,7 +78,29 @@ export function IconPicker({ emoji, onEmoji, legend, defaultLabel = '·' }: {
     defaultLabel?: string;
 }) {
     const { tr, text } = useI18n();
-    return <fieldset className="emoji-picker"><legend>{text(legend)}</legend>{text(recordEmojis.map(e => <button type="button" key={e || 'default'} aria-label={e ? tr('Choose icon') + ' ' + e : tr('Use default icon')} aria-pressed={(emoji || '') === e} onClick={() => onEmoji(e)}>{e || defaultLabel}</button>))}</fieldset>;
+    const [open, setOpen] = useState(false);
+    return <div className="emoji-field"><span className="emoji-field-label">{text(legend)}</span><div className="emoji-field-row">
+        <button type="button" className="emoji-field-button" aria-haspopup="dialog" aria-expanded={open} aria-label={emoji ? tr('Change icon') + ' ' + emoji : tr('Choose icon')} onClick={() => setOpen(true)}><span className="emoji-current" aria-hidden="true">{emoji || defaultLabel}</span><span>{tr(emoji ? 'Change icon' : 'Choose icon')}</span></button>
+        {emoji && <button type="button" className="text-button" onClick={() => onEmoji('')}>{tr('Use default icon')}</button>}
+    </div>{open && <EmojiSheet selected={emoji || ''} close={() => setOpen(false)} choose={e => { onEmoji(e); setOpen(false); }}/>}</div>;
+}
+function EmojiSheet({ selected, close, choose }: { selected: string; close: () => void; choose: (emoji: string) => void }) {
+    const { tr } = useI18n();
+    const [query, setQuery] = useState('');
+    const search = useRef<HTMLInputElement>(null), body = useRef<HTMLDivElement>(null);
+    useEffect(() => { const previous = document.activeElement as HTMLElement | null; search.current?.focus({ preventScroll: true }); return () => previous?.focus({ preventScroll: true }); }, []);
+    const q = query.trim().toLowerCase();
+    const groups = emojiCatalog.map(c => ({ category: c.category, emojis: q ? c.emojis.filter(([e, words]) => words.includes(q) || e === q || tr(c.category).toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) : c.emojis })).filter(g => g.emojis.length);
+    const jump = (category: string) => body.current?.querySelector<HTMLElement>('[data-category="' + category + '"]')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (typeof document === 'undefined') return null;
+    return createPortal(<div className="emoji-sheet-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) close(); }}>
+        <div className="emoji-sheet" role="dialog" aria-modal="true" aria-labelledby="emoji-sheet-title" onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }}>
+            <div className="emoji-sheet-head"><h3 id="emoji-sheet-title">{tr('Choose icon')}</h3><button type="button" className="icon-button" aria-label={tr('Close')} onClick={close}><X size={19}/></button></div>
+            <label className="emoji-search"><Search size={16}/><input ref={search} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={tr('Search icons')} aria-label={tr('Search icons')} maxLength={40}/></label>
+            {!q && <div className="emoji-tabs" role="toolbar" aria-label={tr('Icon categories')}>{emojiCatalog.map(c => <button type="button" key={c.category} onClick={() => jump(c.category)}>{c.emojis[0][0]} {tr(c.category)}</button>)}</div>}
+            <div className="emoji-sheet-body" ref={body}>{groups.map(g => <section key={g.category} data-category={g.category}><h4>{tr(g.category)}</h4><div className="emoji-grid">{g.emojis.map(([e, words]) => <button type="button" key={e} title={words} aria-label={tr('Choose icon') + ' ' + e} aria-pressed={selected === e} onClick={() => choose(e)}>{e}</button>)}</div></section>)}{!groups.length && <p className="emoji-empty">{tr('No icons match your search.')}</p>}</div>
+            <div className="emoji-sheet-foot"><button type="button" className="secondary" onClick={() => choose('')}>{tr('Use default icon')}</button></div>
+        </div></div>, document.body);
 }
 export function AppearancePicker({ color, emoji, onColor, onEmoji }: {
     color?: string;

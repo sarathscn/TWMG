@@ -3,10 +3,10 @@ import {createContext,useContext,useEffect,useId,useRef,useState,type ReactNode,
 import {AlertDialog} from 'radix-ui';
 import {languages} from '../../lib/i18n';
 import {translate,translateMessage,type Locale} from '../../lib/localization';
-type Context={locale:Locale;setLocale:(locale:string)=>void;tr:(key:string,...values:unknown[])=>string;text:(value:ReactNode,message?:boolean)=>ReactNode;confirmAction:(message:string)=>Promise<boolean>};
+type Context={locale:Locale;setLocale:(locale:string)=>void;tr:(key:string,...values:unknown[])=>string;text:(value:ReactNode,message?:boolean)=>ReactNode;confirmAction:(message:string,confirmLabel?:string)=>Promise<boolean>};
 const Context=createContext<Context|null>(null);
 export function UIProvider({children}:{children:ReactNode}){
- const [locale,setLanguage]=useState<Locale>('en'),[confirmation,setConfirmation]=useState<{message:string;resolve:(result:boolean)=>void}|null>(null);
+ const [locale,setLanguage]=useState<Locale>('en'),[confirmation,setConfirmation]=useState<{message:string;confirmLabel?:string;resolve:(result:boolean)=>void}|null>(null);
  const pending=useRef(confirmation);pending.current=confirmation;
  function setLocale(value:string){if(value in languages){setLanguage(value as Locale);localStorage.setItem('twmg-lang',value);document.documentElement.lang=value;document.documentElement.dir=value==='ar'?'rtl':'ltr'}}
  useEffect(()=>{setLocale(localStorage.getItem('twmg-lang')||'en');document.documentElement.dataset.theme=localStorage.getItem('twmg-theme')||'light';return()=>pending.current?.resolve(false)},[]);
@@ -27,9 +27,9 @@ export function UIProvider({children}:{children:ReactNode}){
  useEffect(()=>{if(!confirmation)return;const main=document.querySelector<HTMLElement>('.main-shell main'),overflow=main?.style.overflow;if(main)main.style.overflow='hidden';return()=>{if(main)main.style.overflow=overflow||''}},[confirmation]);
  const tr=(key:string,...values:unknown[])=>translate(locale,key,...values);
  function text(value:ReactNode,message=false):ReactNode{if(typeof value==='string')return message?translateMessage(locale,value):tr(value);if(typeof value==='number')return new Intl.NumberFormat(languages[locale].locale).format(value);if(Array.isArray(value))return value.map(v=>text(v,message));return value}
- function confirmAction(message:string){return new Promise<boolean>(resolve=>setConfirmation(current=>{current?.resolve(false);return {message,resolve}}))}
+ function confirmAction(message:string,confirmLabel='Delete'){return new Promise<boolean>(resolve=>setConfirmation(current=>{current?.resolve(false);return {message,confirmLabel,resolve}}))}
  function finish(value:boolean){confirmation?.resolve(value);setConfirmation(null)}
- return <Context.Provider value={{locale,setLocale,tr,text,confirmAction}}>{children}<AlertDialog.Root open={!!confirmation} onOpenChange={open=>{if(!open)finish(false)}}><AlertDialog.Portal><AlertDialog.Overlay className="confirm-overlay"/><AlertDialog.Content className="confirm-dialog" onEscapeKeyDown={event=>event.stopPropagation()}><AlertDialog.Title>{tr('Please confirm')}</AlertDialog.Title><AlertDialog.Description>{confirmation&&tr(confirmation.message)}</AlertDialog.Description><div className="confirm-actions"><AlertDialog.Cancel className="secondary" onClick={()=>finish(false)}>{tr('Cancel')}</AlertDialog.Cancel><AlertDialog.Action className="primary destructive" onClick={()=>finish(true)}>{tr('Delete')}</AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root></Context.Provider>;
+ return <Context.Provider value={{locale,setLocale,tr,text,confirmAction}}>{children}<AlertDialog.Root open={!!confirmation} onOpenChange={open=>{if(!open)finish(false)}}><AlertDialog.Portal><AlertDialog.Overlay className="confirm-overlay"/><AlertDialog.Content className="confirm-dialog" onEscapeKeyDown={event=>event.stopPropagation()}><AlertDialog.Title>{tr('Please confirm')}</AlertDialog.Title><AlertDialog.Description>{confirmation&&tr(confirmation.message)}</AlertDialog.Description><div className="confirm-actions"><AlertDialog.Cancel className="secondary" onClick={()=>finish(false)}>{tr('Cancel')}</AlertDialog.Cancel><AlertDialog.Action className="primary destructive" onClick={()=>finish(true)}>{tr(confirmation?.confirmLabel||'Delete')}</AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root></Context.Provider>;
 }
 export function useI18n(){const value=useContext(Context);if(!value)throw Error('UIProvider is required');return value}
 export function ValidatedForm({children,onSubmit,...props}:FormHTMLAttributes<HTMLFormElement>){

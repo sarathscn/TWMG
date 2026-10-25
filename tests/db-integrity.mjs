@@ -77,6 +77,22 @@ e = await as(U1, rec('t8', P1, 'transactions', tx('cash', 10, 'expense', { payme
 ok('a transaction cannot use another profile’s method', /payment method/.test(e || ''), e);
 ok('an import may insert a transaction before its method', !(await as(U1, `${rec('t9', P1, 'transactions', tx('cash', 10, 'expense', { paymentMethod: 'm9' }))}; ${rec('m9', P1, 'paymentMethods', { name: 'Card', country: 'India', enabled: true, custom: true })}`)));
 
+console.log('\nShared group members and debt parties');
+const grp = (names, expenses = []) => ({ name: 'Trip', amount: expenses.reduce((s, x) => s + x.amount, 0), paid: 0, memberNames: names, members: names.length, self: 'Sarath', party: names.join(', '), expenses });
+ok('a group with the signed-in member is created', !(await as(U1, rec('sg', P1, 'shared', grp(['Sarath', 'Arjun', 'Meera'])))));
+ok('an account expense is linked with all three in the split', !(await as(U1, rec('st', P1, 'transactions', tx('bank', 900, 'expense', { sharedGroupId: 'sg', paidBy: 'Sarath', participants: ['Sarath', 'Arjun', 'Meera'] })))));
+const linked = async () => (await db.query(`select data from public.records where id='sg'`)).rows[0].data.expenses;
+ok('the expense is mirrored into the group', (await linked()).length === 1 && (await linked())[0].transactionId === 'st');
+const entryFor = parts => ({ id: 'tx-st', transactionId: 'st', name: 'T', amount: 900, date: '2026-10-20', paidBy: 'Sarath', participants: parts });
+e = await as(U1, upd('sg', grp(['Sarath', 'Arjun'], [entryFor(['Sarath', 'Arjun'])])));
+ok('removing a member from the group alone is rejected while a linked split uses them', !!e, e);
+ok('step 1: the linked transaction drops the member (still valid for the old group)', !(await as(U1, upd('st', tx('bank', 900, 'expense', { sharedGroupId: 'sg', paidBy: 'Sarath', participants: ['Sarath', 'Arjun'] })))));
+ok('step 2: the group saves without the member', !(await as(U1, upd('sg', grp(['Sarath', 'Arjun'], [entryFor(['Sarath', 'Arjun'])])))));
+ok('the group and its linked transaction agree', JSON.stringify((await linked())[0].participants) === '["Sarath","Arjun"]');
+ok('members become debt parties with group links', !(await as(U1, `${rec('pa', P1, 'parties', { name: 'Arjun', sharedGroupIds: ['sg'], autoCreated: true })}`)));
+e = await as(U1, rec('pa2', P1, 'parties', { name: 'arjun', sharedGroupIds: ['sg'], autoCreated: true }));
+ok('a member is never added twice as a party', /already exists/.test(e || ''), e);
+
 console.log('\nRow level security');
 const count = async (user, sql) => { await db.exec('begin'); await db.exec(`set local role authenticated; set local request.jwt.claim.sub='${user}'`); const r = await db.query(sql); await db.exec('rollback'); return r.rows[0].n; };
 ok('user 2 sees none of user 1’s records', (await count(U2, `select count(*)::int n from public.records where profile='${P1}'`)) === 0);
