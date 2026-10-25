@@ -108,3 +108,10 @@ img,svg,canvas{max-width:100%}
 /* Long names and large amounts wrap inside their card instead of stretching the layout. */
 .item-card h3,.account-card h3,.ledger-title h3,.ledger-heading,.tx-name b,.shared-group-heading h3,.budget-row b,.upcoming-row b,.legacy-debt b,.spending-list button>span{overflow-wrap:anywhere;min-width:0}
 .item-card h2,.account-card h2,.ledger-summary h2,.metric h2,.donut-center strong{overflow-wrap:anywhere;max-width:100%}
+/* Charts: Recharts makes the chart focusable, which drew a white focus box on click. */
+.recharts-wrapper,.recharts-surface,.recharts-wrapper :focus{outline:none}
+/* Breadcrumb trail: earlier steps are links on desktop; the current page is plain text. */
+.crumbs{display:flex;align-items:center;gap:8px;min-width:0}.crumb{display:inline-flex;align-items:center;gap:8px;min-width:0}.crumb>svg{color:#9ba29a;flex-shrink:0}
+.crumb-link{background:none;border:0;padding:3px 5px;margin:-3px -5px;border-radius:5px;font:inherit;font-size:10px;color:#9ba29a;cursor:pointer}.crumb-link:hover{color:var(--text);background:var(--soft)}
+.crumb b{overflow:hidden;text-overflow:ellipsis;max-width:240px}
+@media(max-width:700px){.crumbs{display:none}}
