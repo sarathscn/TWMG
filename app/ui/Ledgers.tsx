@@ -3,19 +3,21 @@ import { useI18n } from './UIProvider';
 import { Plus, Pencil, ChevronRight, ChevronLeft, Handshake } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { RecordIcon } from './RecordAppearance';
+import { Swipeable } from './Swipeable';
 import { balance, linkedTransactions, partyBalance, sharedEntries, type Data, type Party, type Transaction, type LedgerKind } from '../../lib/finance';
 export type Ledger = {
     kind: LedgerKind;
     id: string;
 };
-export function PartyCards({ data, open, edit, money }: {
+export function PartyCards({ data, open, edit, remove, money }: {
     data: Data;
     open: (id: string) => void;
     edit: (p?: Party) => void;
+    remove?: (p: Party) => void;
     money: (n: number, c?: string) => string;
 }) {
     const { tr, text } = useI18n();
-    return <div className="account-grid">{(data.parties || []).map(p => { const count = linkedTransactions('parties', p.id, data.transactions).length; return <article className="panel item-card" key={p.id}><div className="item-top"><RecordIcon record={p} fallback={<Handshake />}/><button className="icon-button" aria-label={tr('Edit party ' + p.name)} onClick={() => edit(p)}><Pencil size={16}/></button></div><button className="ledger-title" onClick={() => open(p.id)}><h3>{p.name}</h3><ChevronRight size={18}/></button><p>{p.notes || tr('Lending, borrowing and repayments')}</p><small className="ledger-count">{text(count)} {tr("Transactions")}</small><button className="secondary" onClick={() => open(p.id)}>{tr("View transactions ")}<ChevronRight size={15}/></button></article>; })}<button className="add-card" onClick={() => edit()}><Plus /><h3>{tr("Create party")}</h3><p>{tr("A separate ledger for each person.")}</p></button></div>;
+    return <div className="account-grid">{(data.parties || []).map(p => { const count = linkedTransactions('parties', p.id, data.transactions).length; return <Swipeable as="article" className="panel item-card" key={p.id} onEdit={() => edit(p)} onDelete={remove && (() => remove(p))}><div className="item-top"><RecordIcon record={p} fallback={<Handshake />}/><button className="icon-button" aria-label={tr('Edit party ' + p.name)} onClick={() => edit(p)}><Pencil size={16}/></button></div><button className="ledger-title" onClick={() => open(p.id)}><h3>{p.name}</h3><ChevronRight size={18}/></button><p>{p.notes || tr('Lending, borrowing and repayments')}</p><small className="ledger-count">{text(count)} {tr("Transactions")}</small><button className="secondary" onClick={() => open(p.id)}>{tr("View transactions ")}<ChevronRight size={15}/></button></Swipeable>; })}<button className="add-card" onClick={() => edit()}><Plus /><h3>{tr("Create party")}</h3><p>{tr("A separate ledger for each person.")}</p></button></div>;
 }
 export function LedgerPage({ ledger, data, money, table, back, add, edit, children }: {
     ledger: Ledger;

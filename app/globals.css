@@ -117,3 +117,17 @@ img,svg,canvas{max-width:100%}
 @media(max-width:700px){.crumbs{display:none}}
 /* Income and expense cards on the dashboard open their filtered transactions. */
 .metric-link{cursor:pointer;transition:border-color .15s,box-shadow .15s}.metric-link:hover{border-color:#b9c9b5;box-shadow:0 4px 14px #1c39230d}.metric-link:focus-visible{outline:3px solid #83ab8e;outline-offset:3px}
+/* Swipe on touch screens: right reveals Edit, left reveals Delete. Rows slide back when released. */
+.swipeable{touch-action:pan-y}.swipeable:not(tr){position:relative;transition:transform .2s ease,box-shadow .2s}.swipeable.swiping:not(tr){transform:translateX(var(--swipe-x));transition:box-shadow .2s}
+tr.swipeable>td{transition:transform .2s ease}tr.swipeable.swiping>td{transform:translateX(var(--swipe-x));transition:none}
+/* The action label fades in at the edge the row moves away from, inside the card so overflow clipping never hides it. */
+.swipeable[data-swipe]:not(tr)::after{position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 22px;font-size:12px;font-weight:700;letter-spacing:.3px;pointer-events:none;border-radius:inherit;direction:ltr}
+.swipeable[data-swipe=edit]:not(tr)::after{content:var(--swipe-edit);justify-content:flex-start;color:var(--accent);background:linear-gradient(to right,var(--soft) 0,transparent 75%)}
+.swipeable[data-swipe=delete]:not(tr)::after{content:var(--swipe-delete);justify-content:flex-end;color:var(--danger);background:linear-gradient(to left,var(--danger-bg) 0,transparent 75%)}
+.swipeable[data-swipe=edit][data-swipe-ready]:not(tr){box-shadow:0 0 0 2px var(--accent)}.swipeable[data-swipe=delete][data-swipe-ready]:not(tr){box-shadow:0 0 0 2px var(--danger)}
+tr.swipeable[data-swipe=edit]{background:var(--soft)}tr.swipeable[data-swipe=delete]{background:var(--danger-bg)}tr.swipeable[data-swipe]>td{position:relative}
+tr.swipeable[data-swipe=edit]>td:first-child::before,tr.swipeable[data-swipe=delete]>td:last-child::after{position:absolute;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;white-space:nowrap;pointer-events:none;direction:ltr}
+tr.swipeable[data-swipe=edit]>td:first-child::before{content:var(--swipe-edit);right:100%;margin-right:8px;color:var(--accent)}
+tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete);left:100%;margin-left:8px;color:var(--danger)}
+/* Toast notices follow the theme in dark mode. */
+[data-theme=dark] .toast:not(.error){background:var(--success-bg);color:var(--success-text);border:1px solid var(--line);box-shadow:0 7px 30px #0006}

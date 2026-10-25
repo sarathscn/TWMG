@@ -5,6 +5,7 @@ import { Users, Plus, Pencil, Trash2, X, Check, LoaderCircle, CheckCircle2, Arro
 import { currencyScale, fractionDigits, maxAmountMajor, parseMoney } from '../../lib/countries';
 import { ThemedSelect, DateField } from './Controls';
 import { AppearancePicker, RecordIcon } from './RecordAppearance';
+import { Swipeable } from './Swipeable';
 import { groupMembers, parseMemberNames, sharedMemberBalances, sharedEntries, sharedTotal, splitSharedExpense, type Item, type SharedExpense } from '../../lib/finance';
 type Save = (kind: string, value: Item, action?: string) => Promise<boolean>;
 type GroupProps = {
@@ -13,6 +14,7 @@ type GroupProps = {
     money: (n: number) => string;
     date: (s: string) => string;
     edit: (g?: Item) => void;
+    remove?: (g: Item) => void;
     transaction: (g: Item, entry?: SharedExpense) => void;
     settle: (g: Item) => void;
 };
@@ -22,18 +24,18 @@ export function SharedGroups({ groups, ...props }: GroupProps & {
     const { tr, text, confirmAction } = useI18n();
     return <><div className="shared-groups">{text(groups.map(group => <SharedGroupCard key={group.id} group={group} {...props}/>))}</div>{text(!groups.length && <div className="panel empty"><Users /><h3>{tr("Keep shared expenses together")}</h3><p>{tr("Create a group and add the names of everyone sharing costs.")}</p><button className="secondary" onClick={() => props.edit()}><Plus size={15}/>{tr("Create group")}</button></div>)}<div className="info-note"><Users size={18}/><span>{tr("Member names determine the split. Add and manage transactions separately. These shared costs do not create duplicate account expenses.")}</span></div></>;
 }
-function SharedGroupCard({ group, money, date, edit, transaction, settle, open, initialTab }: GroupProps & {
+function SharedGroupCard({ group, money, date, edit, remove, transaction, settle, open, initialTab }: GroupProps & {
     group: Item;
 }) {
     const { tr, text, confirmAction } = useI18n();
     const [tab, setTab] = useState<'details' | 'transactions'>(initialTab || 'details');
     const entries = sharedEntries(group), names = groupMembers(group), total = sharedTotal(entries), paid = group.paid || 0, balances = sharedMemberBalances(group);
     const unassigned = entries.filter(e => !names.includes(e.paidBy)).reduce((s, e) => s + e.amount, 0);
-    return <section className="panel shared-group"><div className="shared-group-heading"><RecordIcon record={group} fallback={<Users size={21}/>}/><div><button className="ledger-title" onClick={() => open ? open(group.id) : setTab('transactions')}><h3>{group.name}</h3></button><p>{text(names.join(', '))} · {text(names.length)}{tr(" people")}</p></div><button className="icon-button" aria-label={tr('Edit group ' + group.name)} onClick={() => edit(group)}><Pencil size={16}/></button></div>
+    return <Swipeable as="section" className="panel shared-group" onEdit={() => edit(group)} onDelete={remove && (() => remove(group))}><div className="shared-group-heading"><RecordIcon record={group} fallback={<Users size={21}/>}/><div><button className="ledger-title" onClick={() => open ? open(group.id) : setTab('transactions')}><h3>{group.name}</h3></button><p>{text(names.join(', '))} · {text(names.length)}{tr(" people")}</p></div><button className="icon-button" aria-label={tr('Edit group ' + group.name)} onClick={() => edit(group)}><Pencil size={16}/></button></div>
  <div className="group-stats"><div><small>{tr("GROUP TOTAL")}</small><strong>{text(money(total))}</strong></div><div><small>{tr("SETTLED")}</small><strong>{text(money(paid))}</strong></div><div><small>{tr("OUTSTANDING")}</small><strong>{text(money(Math.max(0, total - paid)))}</strong></div></div>
  <div className="group-view-tabs" role="tablist" aria-label={tr('Sections for ' + group.name)}><button role="tab" id={'details-tab-' + group.id} aria-selected={tab === 'details'} aria-controls={'details-' + group.id} onClick={() => setTab('details')}>{tr("Split details ")}<span className="count">{text(names.length)}</span></button><button role="tab" id={'transactions-tab-' + group.id} aria-selected={tab === 'transactions'} aria-controls={'transactions-' + group.id} onClick={() => setTab('transactions')}>{tr("Transactions ")}<span className="count">{text(entries.length)}</span></button></div>
  {tab === 'details' ? <div role="tabpanel" id={'details-' + group.id} aria-labelledby={'details-tab-' + group.id}><div className="member-balance-heading"><span>{tr("Member")}</span><span>{tr("Paid")}</span><span>{tr("Share")}</span><span>{tr("Balance*")}</span></div>{balances.map(member => <div className="member-balance" key={member.name}><b>{member.name}</b><span>{text(money(member.paid))}</span><span>{text(money(member.share))}</span><strong className={member.net > 0 ? 'positive' : ''}>{text(money(Math.abs(member.net)))}<small>{text(member.net > 0 ? 'to receive' : member.net < 0 ? 'to pay' : 'even')}</small></strong></div>)}<p className="split-footnote">{tr("* Paid minus share, before recorded group settlements. ")}{text(unassigned > 0 && `${money(unassigned)} has no assigned payer. Edit those transactions to complete the balances.`)}</p>{text(group.due && <p className="split-footnote">{tr("Settlement due ")}{text(date(group.due))}</p>)}</div> : <div role="tabpanel" id={'transactions-' + group.id} aria-labelledby={'transactions-tab-' + group.id} className="group-transactions">{entries.length ? entries.map(entry => <div className="group-transaction" key={entry.id}><span className="group-entry-icon"><ArrowDownLeft size={15}/></span><div><b>{entry.name}</b><small>{text(date(entry.date))} · {entry.paidBy ? tr('Paid by {0}',entry.paidBy) : tr('Payer not assigned')}</small><small>{tr("Split: ")}{splitSharedExpense(entry, names).map(s => `${s.name} ${money(s.amount)}`).join(' · ')}</small>{entry.notes && <p>{entry.notes}</p>}</div><strong>{text(money(entry.amount))}</strong><button className="icon-button" aria-label={tr('Edit transaction ' + entry.name)} onClick={() => transaction(group, entry)}><Pencil size={14}/></button></div>) : <div className="group-empty">{tr("No transactions yet. Add the first expense to this group.")}</div>}</div>}
- <div className="group-actions"><button className="secondary" disabled={entries.length >= 100} onClick={() => { setTab('transactions'); transaction(group); }}><Plus size={15}/>{tr("Add transaction")}</button><button className="text-button" disabled={paid >= total} onClick={() => settle(group)}><CheckCircle2 size={15}/>{tr("Record settlement")}</button></div></section>;
+ <div className="group-actions"><button className="secondary" disabled={entries.length >= 100} onClick={() => { setTab('transactions'); transaction(group); }}><Plus size={15}/>{tr("Add transaction")}</button><button className="text-button" disabled={paid >= total} onClick={() => settle(group)}><CheckCircle2 size={15}/>{tr("Record settlement")}</button></div></Swipeable>;
 }
 function SharedDialog({ title, close, children }: {
     title: string;
