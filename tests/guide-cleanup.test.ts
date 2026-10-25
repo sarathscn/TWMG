@@ -41,3 +41,13 @@ test('Guide progress is saved per account, restored, and never breaks without st
  (globalThis as any).localStorage={getItem:()=>{throw Error('blocked')},setItem:()=>{throw Error('blocked')}};
  assert.equal(loadGuide('a@b.com'),null);assert.doesNotThrow(()=>saveGuide('a@b.com',{status:'done',step:0}));
 });
+test('Notifications list every open reminder, open their records, and clear by swipe until the next due date',()=>{
+ const app=ui['FinanceApp.tsx'];
+ assert.match(app,/reminders\(data, currency, localToday\)/,'the bell uses the shared reminders list');
+ assert.match(app,/noteKey = \(x: Reminder\) => x\.id \+ '@' \+ x\.due/,'clearing is tied to one due date, so the next cycle shows again');
+ const item=app.slice(app.indexOf('<Swipeable key={noteKey(x)}'),app.indexOf('</Swipeable>)}</div>{text(!notes.length'));
+ assert.ok(item.length>0,'notification rows are swipeable');
+ for(const part of ['deleteLabel="Clear"','onClick={() => openNote(x)}','onDelete={() => keepCleared([...cleared, noteKey(x)])}'])assert.ok(item.includes(part),'missing '+part);
+ assert.match(app,/\{ recurring: 'recurring', card: 'accounts', shared: 'shared' \}/,'bills, cards and groups open their own transactions');
+ assert.ok(!/data\.recurring\.map\(x => <div key=\{x\.id\}><span>\{x\.name\}<small>/.test(app),'the old bills-only list is gone');
+});

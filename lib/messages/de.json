@@ -851,5 +851,8 @@
   "Open Reports from Settings for totals and exports": "Berichte in den Einstellungen für Summen und Exporte öffnen",
   "App guide": "App-Anleitung",
   "Totals, breakdowns, CSV and PDF exports": "Summen, Aufschlüsselungen, CSV- und PDF-Export",
-  "Replay the tour of the app": "Die App-Tour wiederholen"
+  "Replay the tour of the app": "Die App-Tour wiederholen",
+  "Clear all": "Alle löschen",
+  "Tap to open · swipe left to clear": "Tippen zum Öffnen · nach links wischen zum Entfernen",
+  "Show cleared ({0})": "Entfernte anzeigen ({0})"
 }

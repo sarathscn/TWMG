@@ -851,5 +851,8 @@
   "Open Reports from Settings for totals and exports": "Open Reports from Settings for totals and exports",
   "App guide": "App guide",
   "Totals, breakdowns, CSV and PDF exports": "Totals, breakdowns, CSV and PDF exports",
-  "Replay the tour of the app": "Replay the tour of the app"
+  "Replay the tour of the app": "Replay the tour of the app",
+  "Clear all": "Clear all",
+  "Tap to open · swipe left to clear": "Tap to open · swipe left to clear",
+  "Show cleared ({0})": "Show cleared ({0})"
 }

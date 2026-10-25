@@ -851,5 +851,8 @@
   "Open Reports from Settings for totals and exports": "افتح التقارير من الإعدادات للإجماليات والتصدير",
   "App guide": "دليل التطبيق",
   "Totals, breakdowns, CSV and PDF exports": "الإجماليات والتفاصيل وتصدير CSV وPDF",
-  "Replay the tour of the app": "أعد جولة التطبيق"
+  "Replay the tour of the app": "أعد جولة التطبيق",
+  "Clear all": "مسح الكل",
+  "Tap to open · swipe left to clear": "اضغط للفتح · اسحب لليسار للمسح",
+  "Show cleared ({0})": "إظهار الممسوحة ({0})"
 }

@@ -10,6 +10,8 @@ type Props = HTMLAttributes<HTMLElement> & {
     as?: ElementType;
     onEdit?: () => void;
     onDelete?: () => void;
+    // Word shown for the left swipe and in the long-press sheet ('Clear' for notifications).
+    deleteLabel?: string;
     children: ReactNode;
 };
 // Gestures on any list row or card: swipe (touch, pen, or mouse drag on desktop) right to edit,
@@ -17,7 +19,7 @@ type Props = HTMLAttributes<HTMLElement> & {
 // away from buttons, links and fields, so clicks behave as before, and vertical movement hands
 // control back to page scrolling.
 const interactive = 'button,a,input,select,textarea,label,[role=combobox],[role=switch],[contenteditable=true]';
-export function Swipeable({ as: Tag = 'div', onEdit, onDelete, children, className = '', style, ...rest }: Props) {
+export function Swipeable({ as: Tag = 'div', onEdit, onDelete, deleteLabel = 'Delete', children, className = '', style, ...rest }: Props) {
     const { tr } = useI18n();
     const start = useRef<{ x: number; y: number; id: number; locked: boolean } | null>(null);
     const swiped = useRef(false), ended = useRef(0), hold = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -27,7 +29,7 @@ export function Swipeable({ as: Tag = 'div', onEdit, onDelete, children, classNa
     function reset() { clearTimeout(hold.current); start.current = null; setDx(0); }
     function act(action?: () => void) { setMenu(false); action?.(); }
     // Labels travel as inherited CSS strings so table cells can show them too.
-    const swipeStyle = { ...style, '--swipe-x': dx + 'px', '--swipe-edit': JSON.stringify(tr('Edit')), '--swipe-delete': JSON.stringify(tr('Delete')) } as CSSProperties;
+    const swipeStyle = { ...style, '--swipe-x': dx + 'px', '--swipe-edit': JSON.stringify(tr('Edit')), '--swipe-delete': JSON.stringify(tr(deleteLabel)) } as CSSProperties;
     return <><Tag {...rest} className={(className + ' swipeable' + (dx ? ' swiping' : '')).trim()} style={swipeStyle} data-swipe={dx > 0 ? 'edit' : dx < 0 ? 'delete' : undefined} data-swipe-ready={Math.abs(dx) >= TRIGGER ? '' : undefined}
         onPointerDown={(e: React.PointerEvent<HTMLElement>) => {
             swiped.current = false;
@@ -66,7 +68,7 @@ export function Swipeable({ as: Tag = 'div', onEdit, onDelete, children, classNa
     </Tag>
     {menu && typeof document !== 'undefined' && createPortal(<div className="action-sheet-backdrop" onClick={() => setMenu(false)}><div className="action-sheet" role="menu" aria-label={tr('Actions')} onClick={e => e.stopPropagation()}>
         {onEdit && <button type="button" role="menuitem" onClick={() => act(onEdit)}>{tr('Edit')}</button>}
-        {onDelete && <button type="button" role="menuitem" className="danger-action" onClick={() => act(onDelete)}>{tr('Delete')}</button>}
+        {onDelete && <button type="button" role="menuitem" className="danger-action" onClick={() => act(onDelete)}>{tr(deleteLabel)}</button>}
         <button type="button" className="cancel-action" onClick={() => setMenu(false)} autoFocus><X size={17}/>{tr('Cancel')}</button>
     </div></div>, document.body)}</>;
 }

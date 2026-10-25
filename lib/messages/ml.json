@@ -851,5 +851,8 @@
   "Open Reports from Settings for totals and exports": "ആകെത്തുകകൾക്കും എക്സ്പോർട്ടുകൾക്കും ക്രമീകരണങ്ങളിൽ നിന്ന് റിപ്പോർട്ടുകൾ തുറക്കുക",
   "App guide": "ആപ്പ് ഗൈഡ്",
   "Totals, breakdowns, CSV and PDF exports": "ആകെത്തുക, വിശദാംശങ്ങൾ, CSV, PDF എക്സ്പോർട്ടുകൾ",
-  "Replay the tour of the app": "ആപ്പിന്റെ ടൂർ വീണ്ടും കാണുക"
+  "Replay the tour of the app": "ആപ്പിന്റെ ടൂർ വീണ്ടും കാണുക",
+  "Clear all": "എല്ലാം മായ്ക്കുക",
+  "Tap to open · swipe left to clear": "തുറക്കാൻ ടാപ്പ് ചെയ്യുക · മായ്ക്കാൻ ഇടത്തേക്ക് സ്വൈപ്പ് ചെയ്യുക",
+  "Show cleared ({0})": "മായ്ച്ചവ കാണിക്കുക ({0})"
 }
