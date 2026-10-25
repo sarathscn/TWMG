@@ -1,0 +1,2 @@
+# The Android app is built separately; Vercel only deploys the website.
+android/

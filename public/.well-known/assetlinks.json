@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sarathscn.twmg",
+      "sha256_cert_fingerprints": [
+        "30:9E:5D:93:B2:A3:64:CB:50:13:95:F2:D0:C7:DD:27:88:72:05:F1:68:28:C6:53:07:5B:C9:26:36:44:29:A9",
+        "CF:0A:8C:76:BF:23:EB:B5:66:18:17:B3:3A:AD:60:83:BF:DB:A3:A7:11:C1:1F:5D:2B:CB:C6:41:90:11:42:19"
+      ]
+    }
+  }
+]

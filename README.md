@@ -20,6 +20,7 @@ Built with **Next.js 16**, **React 19**, **TypeScript** and **Supabase** (Postgr
   - [6. Finish the Auth redirect setup](#6-finish-the-auth-redirect-setup)
   - [7. Check the deployment](#7-check-the-deployment)
 - [Local development](#local-development)
+- [Android app](#android-app)
 - [Security model](#security-model)
 - [Keys and secrets](#keys-and-secrets)
 - [Scripts and tests](#scripts-and-tests)
@@ -212,6 +213,38 @@ npx supabase db push                                # applies supabase/migration
 ```
 
 **Dev preview:** under `npm run dev` only, the sign-in screen shows **Skip sign-in (dev preview)**. It opens an empty, in-browser workspace for checking layouts. Nothing is sent to Supabase, saving requires a real session, and the button is compiled out of production builds.
+
+---
+
+## Android app
+
+`android/` is a small native Kotlin app (package `com.sarathscn.twmg`, Android 8.0+) that hosts the live web app from `https://twmg.vercel.app` in a locked-down WebView, so it uses the same Supabase sign-in, data and security checks as the website.
+
+- **Gestures:** swipe right to edit, swipe left to delete (with confirmation), long-press for an Edit/Delete sheet, tap as usual. The system back button and predictive back gesture step back through in-app pages before leaving.
+- **Layout:** edge-to-edge with system-bar, display-cutout and keyboard insets; follows light/dark mode.
+- **Links:** email confirmation and password-reset links (`/auth/…`) open in the app via verified App Links (`public/.well-known/assetlinks.json`). Other sites open in the browser.
+- **Files:** the profile photo picker works, and CSV exports and JSON backups save to **Downloads**.
+- **Offline:** a retry screen appears instead of a broken page.
+
+Build (JDK 17 and the Android SDK with platform 35 / build-tools 35 required):
+
+```bash
+cd android
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew bundleRelease        # app/build/outputs/bundle/release/app-release.aab
+./gradlew assembleRelease      # app/build/outputs/apk/release/app-release.apk
+```
+
+Release signing reads `~/.twmg-signing/keystore.properties` (or the path in `TWMG_KEYSTORE_PROPERTIES`), never a file in this repo:
+
+```properties
+storeFile=twmg-release.jks
+storePassword=…
+keyAlias=twmg
+keyPassword=…
+```
+
+Back up that folder: every future update must be signed with the same key. If you publish on Google Play with Play App Signing, add Play's app-signing SHA-256 fingerprint to `public/.well-known/assetlinks.json` so links keep opening in the app.
 
 ---
 

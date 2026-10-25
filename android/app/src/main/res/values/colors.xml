@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the web app: brand green and the light/dark page backgrounds. -->
+    <color name="brand">#2D6048</color>
+    <color name="background">#F6F6F1</color>
+    <color name="white">#FFFFFF</color>
+</resources>
