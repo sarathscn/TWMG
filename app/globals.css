@@ -265,3 +265,7 @@ tr.tx-row{cursor:pointer}tr.tx-row:hover>td{background:var(--soft)}tr.tx-row:foc
 .guide-card.docked p:not(.guide-hint){display:none}
 @media(max-width:700px){.guide-sheet{padding:22px 18px 18px;border-radius:18px}.guide-card-actions .text-button{font-size:11px}}
 @media print{.guide-layer,.guide-backdrop{display:none}}
+/* Touch screens: 16px fields so iOS (Safari and Chrome) doesn't zoom the page in on focus */
+@media(pointer:coarse){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea{font-size:16px!important}}
+/* Keyboard open: the bottom navigation steps aside instead of sitting on top of the keyboard */
+.keyboard-open .bottom-nav{display:none!important}

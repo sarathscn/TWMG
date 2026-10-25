@@ -9,6 +9,16 @@ export function UIProvider({children}:{children:ReactNode}){
  const [locale,setLanguage]=useState<Locale>('en'),[confirmation,setConfirmation]=useState<{message:string;confirmLabel?:string;resolve:(result:boolean)=>void}|null>(null);
  const pending=useRef(confirmation);pending.current=confirmation;
  function setLocale(value:string){if(value in languages){setLanguage(value as Locale);localStorage.setItem('twmg-lang',value);document.documentElement.lang=value;document.documentElement.dir=value==='ar'?'rtl':'ltr'}}
+ // While the on-screen keyboard is up (a text field has focus on a touch screen), mark the page so
+ // fixed bars like the bottom navigation step aside instead of riding up above the keyboard.
+ useEffect(()=>{
+  const root=document.documentElement,touch=matchMedia('(pointer:coarse)');
+  const typing=(el:Element|null)=>el instanceof HTMLElement&&(el.isContentEditable||el instanceof HTMLTextAreaElement||el instanceof HTMLSelectElement||(el instanceof HTMLInputElement&&!['checkbox','radio','range','button','submit','reset','file','color'].includes(el.type)));
+  const sync=()=>root.classList.toggle('keyboard-open',touch.matches&&typing(document.activeElement));
+  const later=()=>setTimeout(sync,60);
+  document.addEventListener('focusin',sync);document.addEventListener('focusout',later);
+  return()=>{document.removeEventListener('focusin',sync);document.removeEventListener('focusout',later);root.classList.remove('keyboard-open')};
+ },[]);
  useEffect(()=>{setLocale(localStorage.getItem('twmg-lang')||'en');document.documentElement.dataset.theme=localStorage.getItem('twmg-theme')||'light';return()=>pending.current?.resolve(false)},[]);
  useEffect(()=>{
   const editable=(target:EventTarget|null)=>target instanceof HTMLElement&&!!target.closest('input,textarea,select,[contenteditable="true"]');

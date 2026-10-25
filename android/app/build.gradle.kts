@@ -18,8 +18,8 @@ android {
         applicationId = "com.sarathscn.twmg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.7.0"
+        versionCode = 9
+        versionName = "1.7.1"
         buildConfigField("String", "APP_URL", "\"https://twmg.vercel.app\"")
     }
 
