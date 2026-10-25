@@ -854,5 +854,7 @@
   "Replay the tour of the app": "Die App-Tour wiederholen",
   "Clear all": "Alle löschen",
   "Tap to open · swipe left to clear": "Tippen zum Öffnen · nach links wischen zum Entfernen",
-  "Show cleared ({0})": "Entfernte anzeigen ({0})"
+  "Show cleared ({0})": "Entfernte anzeigen ({0})",
+  "Filters": "Filter",
+  "Done": "Fertig"
 }

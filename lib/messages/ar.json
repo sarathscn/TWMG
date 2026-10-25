@@ -854,5 +854,7 @@
   "Replay the tour of the app": "أعد جولة التطبيق",
   "Clear all": "مسح الكل",
   "Tap to open · swipe left to clear": "اضغط للفتح · اسحب لليسار للمسح",
-  "Show cleared ({0})": "إظهار الممسوحة ({0})"
+  "Show cleared ({0})": "إظهار الممسوحة ({0})",
+  "Filters": "المرشحات",
+  "Done": "تم"
 }

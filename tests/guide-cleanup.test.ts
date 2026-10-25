@@ -56,3 +56,11 @@ test('The notification list stacks vertically and the popover keeps its own widt
  assert.match(css,/\.popover\.notifications>\.notification-list\{display:flex;flex-direction:column/,'the list overrides the old ".notifications>div" row rule');
  assert.match(css,/\.topbar \.popover\.notifications\{[^}]*max-width:none/,'the popover is not squeezed to the bell button width');
 });
+test('Phones get a bottom-sheet notification centre above the navigation, and folded filters',()=>{
+ const css=readFileSync('app/globals.css','utf8'),app=ui['FinanceApp.tsx'];
+ assert.ok(app.indexOf('className="notifications-backdrop"')>app.indexOf('</header>'),'the sheet is rendered outside the top bar, above the bottom navigation');
+ assert.match(css,/@media\(max-width:700px\)\{[^@]*\.popover\.notifications\.notification-center\{top:auto;bottom:0;left:0;right:0;width:100%/,'phones show it as a bottom sheet');
+ assert.match(app,/Math\.min\(Math\.max\(12, bell\.right \+ 8 - notifWidth\), window\.innerWidth - notifWidth - 12\)/,'the dropdown stays on screen in both reading directions');
+ assert.match(app,/\[filtersOpen, setFiltersOpen\] = useState\(\(\) => typeof window === 'undefined' \|\| window\.innerWidth > 700\)/,'filters start folded on phones');
+ assert.match(app,/\{filtersOpen && <div className="filter-selects"/);
+});

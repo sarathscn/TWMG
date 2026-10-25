@@ -854,5 +854,7 @@
   "Replay the tour of the app": "Replay the tour of the app",
   "Clear all": "Clear all",
   "Tap to open · swipe left to clear": "Tap to open · swipe left to clear",
-  "Show cleared ({0})": "Show cleared ({0})"
+  "Show cleared ({0})": "Show cleared ({0})",
+  "Filters": "Filters",
+  "Done": "Done"
 }

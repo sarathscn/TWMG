@@ -854,5 +854,7 @@
   "Replay the tour of the app": "ऐप का टूर फिर से देखें",
   "Clear all": "सब साफ़ करें",
   "Tap to open · swipe left to clear": "खोलने के लिए टैप करें · साफ़ करने के लिए बाएँ स्वाइप करें",
-  "Show cleared ({0})": "साफ़ किए गए दिखाएँ ({0})"
+  "Show cleared ({0})": "साफ़ किए गए दिखाएँ ({0})",
+  "Filters": "फ़िल्टर",
+  "Done": "हो गया"
 }

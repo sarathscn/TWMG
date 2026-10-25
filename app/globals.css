@@ -288,3 +288,34 @@ tr.tx-row{cursor:pointer}tr.tx-row:hover>td{background:var(--soft)}tr.tx-row:foc
 .popover.notifications>.notifications-head{padding:0 4px 6px;border-top:0;gap:10px}
 .popover.notifications .notification-item{width:100%;flex-shrink:0}
 .topbar .popover.notifications{width:min(360px,calc(100vw - 24px));min-width:0;max-width:none}
+/* Transactions toolbar: search, then type + count; filters fold behind one button */
+.list-toolbar-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.list-toolbar-row .list-count{white-space:nowrap}
+.filter-bar{padding:0 20px 14px;display:grid;gap:10px}
+.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.filter-toggle{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.filter-toggle:hover{border-color:var(--accent)}.filter-toggle.has-filters{border-color:var(--accent);background:var(--soft)}
+.filter-toggle .count{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;line-height:18px;text-align:center}
+[data-theme=dark] .filter-toggle .count{color:#17221d}
+.filter-chevron{transition:transform .2s}.filter-toggle[aria-expanded=true] .filter-chevron{transform:rotate(180deg)}
+.filter-row .filter-chips{display:contents}
+.filter-selects{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;animation:twmg-fade .15s ease-out}
+@media(max-width:700px){
+ .list-toolbar-row{width:100%;justify-content:space-between}.list-toolbar-row .themed-select{flex:1;min-width:0;max-width:220px}
+ .filter-bar{padding:0 12px 12px}.filter-selects{grid-template-columns:1fr 1fr}.filter-selects>:last-child:nth-child(odd){grid-column:1/-1}
+}
+/* Notifications: a dropdown under the bell on wide screens, a bottom sheet on phones.
+   Rendered outside the top bar so it sits above the bottom navigation. */
+.notifications-backdrop{position:fixed;inset:0;z-index:240;background:transparent}
+.popover.notifications.notification-center{position:fixed;z-index:245;inset-inline-end:auto;inset-inline-start:auto;top:var(--anchor-top,70px);left:var(--anchor-left,auto);right:auto;bottom:auto;width:min(380px,calc(100vw - 24px));max-width:none;min-width:0;max-height:min(70vh,560px);display:flex;flex-direction:column}
+.notification-center .sheet-handle{display:none}
+.notifications-head-actions{display:inline-flex;gap:12px;align-items:center}
+@media(max-width:700px){
+ .notifications-backdrop{background:#0d1c15a8;backdrop-filter:blur(2px);animation:twmg-fade .16s ease-out}
+ .popover.notifications.notification-center{top:auto;bottom:0;left:0;right:0;width:100%;max-height:min(80vh,640px);max-height:min(80dvh,640px);border-radius:22px 22px 0 0;border-bottom:0;padding:8px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -18px 50px #0004;animation:twmg-sheet-up .22s ease-out}
+ .notification-center .sheet-handle{display:block;width:40px;height:4px;border-radius:4px;background:var(--line);margin:2px auto 10px;flex-shrink:0}
+ .notification-center .notifications-head b{font-size:16px}
+ .notification-center .notification-item{min-height:56px;padding:12px 14px}
+ .notification-center .notification-item b{font-size:13px}.notification-center .notification-item small{font-size:11px}.notification-center .notification-item strong{font-size:13px}
+}
+@keyframes twmg-sheet-up{from{transform:translateY(100%)}to{transform:none}}
+@media(prefers-reduced-motion:reduce){.popover.notifications.notification-center,.notifications-backdrop{animation:none}}
