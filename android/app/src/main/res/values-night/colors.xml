@@ -2,5 +2,7 @@
 <resources>
     <color name="brand">#2D6048</color>
     <color name="background">#17221D</color>
+    <color name="text">#E2E8DC</color>
+    <color name="muted">#9DA895</color>
     <color name="white">#FFFFFF</color>
 </resources>

@@ -154,3 +154,20 @@ tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete)
 .setup-checklist li>span:nth-child(2){flex:1;min-width:0}.setup-checklist li b{display:block;font-size:12px;font-weight:600}.setup-checklist li small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
 .setup-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.setup-checklist li.done .setup-check{background:var(--accent);border-color:var(--accent);color:var(--surface)}.setup-checklist li.done b{color:var(--muted);text-decoration:line-through}
 .setup-checklist li button{display:inline-flex;align-items:center;gap:4px;padding:7px 10px;font-size:11px;white-space:nowrap}
+/* Motion: short, transform/opacity-only transitions (no layout work, no loops). The global
+   prefers-reduced-motion rule above switches all of them off for people who ask for less motion. */
+@keyframes twmg-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes twmg-fade{from{opacity:0}to{opacity:1}}
+@keyframes twmg-pop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.main-shell>main{animation:twmg-enter .2s cubic-bezier(.2,.8,.2,1)}
+.modal-backdrop,.confirm-overlay,.action-sheet-backdrop{animation:twmg-fade .16s ease-out}
+.modal,.action-sheet,.profile-switcher{animation:twmg-pop .22s cubic-bezier(.2,.8,.2,1)}
+.confirm-dialog,.toast,.popover,.select-menu,.calendar-popover{animation:twmg-fade .15s ease-out}
+.primary,.secondary,.icon-button,.more-tile,.metric-link{transition:transform .12s ease,background-color .15s,border-color .15s,box-shadow .15s}
+.primary:active:not(:disabled),.secondary:active:not(:disabled),.more-tile:active,.metric-link:active{transform:scale(.98)}
+/* Passkeys and Android device settings. */
+.passkey-signin{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px}
+.passkeys-panel h3,.device-panel h3{display:flex;align-items:center;gap:8px}
+.passkey-list{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:2px}.passkey-list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.passkey-list li>span{flex:1;min-width:0}.passkey-list b{display:block;font-size:12px}.passkey-list small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.device-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}.device-toggle>span{display:flex;align-items:flex-start;gap:12px;min-width:0}.device-toggle>span>svg{flex-shrink:0;margin-top:2px;color:var(--accent)}
+.device-toggle b{display:block;font-size:12px}.device-toggle small{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5}.device-toggle input{width:40px;height:22px;accent-color:var(--accent);flex-shrink:0}

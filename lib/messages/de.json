@@ -699,7 +699,28 @@
   "Set a monthly budget": "Lege ein Monatsbudget fest",
   "Pick a category and a limit to stay on track.": "Wähle eine Kategorie und ein Limit, um im Rahmen zu bleiben.",
   "Record a transaction": "Erfasse eine Transaktion",
-  "Add today’s spending or your latest income.": "Füge die heutigen Ausgaben oder dein letztes Einkommen hinzu."
+  "Add today’s spending or your latest income.": "Füge die heutigen Ausgaben oder dein letztes Einkommen hinzu.",
+  "Sign in with a passkey": "Mit Passkey anmelden",
+  "Passkeys": "Passkeys",
+  "Passkey": "Passkey",
+  "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.": "Melde dich mit Fingerabdruck, Gesicht oder Displaysperre statt Passwort an. Deine Biometrie verlässt nie dein Gerät.",
+  "Added ": "Hinzugefügt ",
+  "Last used ": "Zuletzt verwendet ",
+  "Delete passkey": "Passkey löschen",
+  "No passkeys yet.": "Noch keine Passkeys.",
+  "Add a passkey": "Passkey hinzufügen",
+  "Passkey added. You can now sign in with it.": "Passkey hinzugefügt. Du kannst dich jetzt damit anmelden.",
+  "Passkey removed.": "Passkey entfernt.",
+  "Delete this passkey? You can still sign in with your password.": "Diesen Passkey löschen? Du kannst dich weiterhin mit deinem Passwort anmelden.",
+  "This device": "Dieses Gerät",
+  "App lock": "App-Sperre",
+  "Unlock TWMG with your fingerprint, face or screen lock.": "Entsperre TWMG mit Fingerabdruck, Gesicht oder Displaysperre.",
+  "Set up a fingerprint, face or screen lock on this phone to use App lock.": "Richte auf diesem Telefon Fingerabdruck, Gesicht oder Displaysperre ein, um die App-Sperre zu nutzen.",
+  "Bill reminders": "Rechnungserinnerungen",
+  "Notifications for recurring bills, card payments and debts that are due.": "Benachrichtigungen für fällige wiederkehrende Rechnungen, Kartenzahlungen und Schulden.",
+  "{0} is due": "{0} ist fällig",
+  "{0} payment due": "{0}-Zahlung fällig",
+  "Credit card payment": "Kreditkartenzahlung"
 }
 
 

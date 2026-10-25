@@ -54,4 +54,9 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
+    // System biometric prompt for App lock; biometric data never reaches the app.
+    implementation("androidx.biometric:biometric:1.1.0")
+    // WebAuthn (passkeys) inside the WebView on supported devices.
+    implementation("androidx.webkit:webkit:1.12.1")
 }

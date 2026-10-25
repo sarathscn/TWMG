@@ -699,7 +699,28 @@
   "Set a monthly budget": "मासिक बजट तय करें",
   "Pick a category and a limit to stay on track.": "सही राह पर रहने के लिए एक श्रेणी और सीमा चुनें।",
   "Record a transaction": "लेन-देन दर्ज करें",
-  "Add today’s spending or your latest income.": "आज का खर्च या अपनी नवीनतम आय जोड़ें।"
+  "Add today’s spending or your latest income.": "आज का खर्च या अपनी नवीनतम आय जोड़ें।",
+  "Sign in with a passkey": "पासकी से साइन इन करें",
+  "Passkeys": "पासकी",
+  "Passkey": "पासकी",
+  "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.": "पासवर्ड के बजाय अपने फिंगरप्रिंट, चेहरे या स्क्रीन लॉक से साइन इन करें। आपका बायोमेट्रिक डेटा कभी आपके डिवाइस से बाहर नहीं जाता।",
+  "Added ": "जोड़ा गया ",
+  "Last used ": "अंतिम उपयोग ",
+  "Delete passkey": "पासकी हटाएँ",
+  "No passkeys yet.": "अभी तक कोई पासकी नहीं।",
+  "Add a passkey": "पासकी जोड़ें",
+  "Passkey added. You can now sign in with it.": "पासकी जोड़ी गई। अब आप इससे साइन इन कर सकते हैं।",
+  "Passkey removed.": "पासकी हटा दी गई।",
+  "Delete this passkey? You can still sign in with your password.": "यह पासकी हटाएँ? आप अब भी अपने पासवर्ड से साइन इन कर सकते हैं।",
+  "This device": "यह डिवाइस",
+  "App lock": "ऐप लॉक",
+  "Unlock TWMG with your fingerprint, face or screen lock.": "अपने फिंगरप्रिंट, चेहरे या स्क्रीन लॉक से TWMG खोलें।",
+  "Set up a fingerprint, face or screen lock on this phone to use App lock.": "ऐप लॉक के लिए इस फ़ोन पर फिंगरप्रिंट, चेहरा या स्क्रीन लॉक सेट करें।",
+  "Bill reminders": "बिल रिमाइंडर",
+  "Notifications for recurring bills, card payments and debts that are due.": "देय आवर्ती बिलों, कार्ड भुगतानों और कर्ज़ों की सूचनाएँ।",
+  "{0} is due": "{0} देय है",
+  "{0} payment due": "{0} का भुगतान देय",
+  "Credit card payment": "क्रेडिट कार्ड भुगतान"
 }
 
 

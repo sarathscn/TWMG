@@ -1,17 +1,23 @@
 package com.sarathscn.twmg
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Base64
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -21,38 +27,63 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.FragmentActivity
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import java.io.File
 
 /**
  * TWMG for Android: hosts the TWMG web app (Supabase sign-in, data and all screens) in a
  * locked-down WebView. Native code adds what a browser tab can't: the system back gesture
  * walks the app's own history, edge-to-edge insets, verified links for email confirmation
- * and password reset, the photo picker, file downloads and an offline retry screen.
+ * and password reset, the photo picker, file downloads, an offline retry screen, a biometric
+ * App lock, local bill reminders and passkeys (WebAuthn) where the device supports them.
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private lateinit var web: WebView
+    private lateinit var lockView: View
     private val appUri: Uri = Uri.parse(BuildConfig.APP_URL)
     @Volatile private var onAppPage = false
+    private var locked = false
+    private var backgroundedAt = 0L
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+    private val prefs by lazy { getSharedPreferences("twmg", MODE_PRIVATE) }
     private val pickFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         fileCallback?.onReceiveValue(uri?.let { arrayOf(it) } ?: emptyArray())
         fileCallback = null
+    }
+    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        Reminders.setEnabled(this, granted)
+        notifyWeb("reminders", granted)
+        if (!granted) Toast.makeText(this, R.string.notifications_denied, Toast.LENGTH_LONG).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Reminders.createChannel(this)
         val root = FrameLayout(this)
         web = WebView(this).apply { setBackgroundColor(Color.TRANSPARENT) }
         root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        lockView = buildLockView()
+        root.addView(lockView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         setContentView(root)
         // Keep content clear of the status bar, navigation bar, display cutout and keyboard.
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
@@ -61,18 +92,36 @@ class MainActivity : ComponentActivity() {
             WindowInsetsCompat.CONSUMED
         }
         configure(web)
+        applySecureFlag()
         // System back (button or predictive gesture) steps back through in-app navigation first.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) web.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                if (!locked && web.canGoBack()) web.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed(); isEnabled = true }
             }
         })
         if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(startUrl(intent))
+        if (appLockEnabled()) lock()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.data?.takeIf(::isAppUrl)?.let { web.loadUrl(it.toString()) }
+    }
+
+    // Pause WebView work while the app isn't visible (battery), and re-lock after 30 s away.
+    override fun onStart() {
+        super.onStart()
+        web.resumeTimers()
+        if (appLockEnabled() && !locked && backgroundedAt > 0 && SystemClock.elapsedRealtime() - backgroundedAt > LOCK_AFTER_MS) lock()
+    }
+
+    override fun onResume() { super.onResume(); web.onResume() }
+    override fun onPause() { web.onPause(); super.onPause() }
+
+    override fun onStop() {
+        backgroundedAt = SystemClock.elapsedRealtime()
+        web.pauseTimers()
+        super.onStop()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -103,12 +152,16 @@ class MainActivity : ComponentActivity() {
             textZoom = 100
             userAgentString = "$userAgentString TWMGAndroid/${BuildConfig.VERSION_NAME}"
         }
+        // Passkeys: let the page use WebAuthn with this app's verified credentials (assetlinks.json).
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_AUTHENTICATION)) {
+            WebSettingsCompat.setWebAuthenticationSupport(view.settings, WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP)
+        }
         // Supabase sessions live in first-party cookies on the app's own domain.
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(view, false)
         }
-        view.addJavascriptInterface(DownloadBridge(), "TWMGAndroid")
+        view.addJavascriptInterface(NativeBridge(), "TWMGAndroid")
         view.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
@@ -140,6 +193,59 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // ---- App lock --------------------------------------------------------------------------
+    private fun authenticators() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) BIOMETRIC_STRONG or DEVICE_CREDENTIAL else BIOMETRIC_WEAK or DEVICE_CREDENTIAL
+    private fun lockAvailable() = BiometricManager.from(this).canAuthenticate(authenticators()) == BiometricManager.BIOMETRIC_SUCCESS
+    private fun appLockEnabled() = prefs.getBoolean(KEY_APP_LOCK, false) && lockAvailable()
+
+    // While App lock is on, keep balances out of screenshots and the recent-apps preview.
+    private fun applySecureFlag() {
+        if (prefs.getBoolean(KEY_APP_LOCK, false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    private fun lock() {
+        locked = true
+        lockView.visibility = View.VISIBLE
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        authenticate(getString(R.string.unlock_title)) { unlock() }
+    }
+
+    private fun unlock() {
+        locked = false
+        lockView.visibility = View.GONE
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+    }
+
+    /** Shows the system prompt; the app only learns success or failure, never biometric data. */
+    private fun authenticate(title: String, onSuccess: () -> Unit) {
+        val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onSuccess()
+        })
+        prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(getString(R.string.unlock_subtitle))
+            .setAllowedAuthenticators(authenticators())
+            .build())
+    }
+
+    private fun buildLockView(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        setBackgroundColor(getColor(R.color.background))
+        visibility = View.GONE
+        isClickable = true
+        val pad = (24 * resources.displayMetrics.density).toInt()
+        setPadding(pad, pad, pad, pad)
+        addView(ImageView(context).apply { setImageResource(R.mipmap.ic_launcher); contentDescription = null }, LinearLayout.LayoutParams(pad * 3, pad * 3))
+        addView(TextView(context).apply { setText(R.string.locked_title); textSize = 20f; gravity = Gravity.CENTER; setTextColor(getColor(R.color.text)); setPadding(0, pad, 0, pad / 3) })
+        addView(TextView(context).apply { setText(R.string.locked_body); textSize = 14f; gravity = Gravity.CENTER; setTextColor(getColor(R.color.muted)); setPadding(0, 0, 0, pad) })
+        addView(Button(context).apply { setText(R.string.unlock_button); setOnClickListener { authenticate(getString(R.string.unlock_title)) { unlock() } } })
+    }
+
+    private fun notifyWeb(type: String, enabled: Boolean) {
+        runOnUiThread { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',enabled:$enabled}}))", null) }
+    }
+
     private fun openExternally(uri: Uri) {
         try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (e: ActivityNotFoundException) { Toast.makeText(this, R.string.no_app_for_link, Toast.LENGTH_SHORT).show() }
     }
@@ -154,10 +260,44 @@ class MainActivity : ComponentActivity() {
             </style></head><body><div><h1>You're offline</h1><p>TWMG needs a connection to load your money. Check your internet and try again.</p><a href="${BuildConfig.APP_URL}">Try again</a></div></body></html>"""
     }
 
-    /** Receives files the web app downloads (CSV export, JSON backup) and saves them to Downloads. */
-    inner class DownloadBridge {
-        @JavascriptInterface
-        fun saveFile(name: String, dataUrl: String) {
+    /**
+     * Methods the web app may call as `window.TWMGAndroid.*`. Every call is ignored unless the
+     * WebView is showing the app's own origin, so other pages can never reach them.
+     */
+    inner class NativeBridge {
+        @JavascriptInterface fun appLockAvailable(): Boolean = onAppPage && lockAvailable()
+        @JavascriptInterface fun appLockEnabled(): Boolean = onAppPage && appLockEnabled()
+
+        /** Turning App lock on or off requires a successful biometric/device-credential check. */
+        @JavascriptInterface fun setAppLockEnabled(enabled: Boolean) {
+            if (!onAppPage) return
+            runOnUiThread {
+                if (!lockAvailable()) { notifyWeb("appLock", false); return@runOnUiThread }
+                authenticate(getString(if (enabled) R.string.enable_lock_title else R.string.disable_lock_title)) {
+                    prefs.edit().putBoolean(KEY_APP_LOCK, enabled).apply()
+                    applySecureFlag()
+                    notifyWeb("appLock", enabled)
+                }
+                notifyWeb("appLock", appLockEnabled())
+            }
+        }
+
+        @JavascriptInterface fun remindersEnabled(): Boolean = onAppPage && Reminders.enabled(this@MainActivity) && notificationsAllowed()
+
+        @JavascriptInterface fun setRemindersEnabled(enabled: Boolean) {
+            if (!onAppPage) return
+            runOnUiThread {
+                if (enabled && !notificationsAllowed() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                else { Reminders.setEnabled(this@MainActivity, enabled && notificationsAllowed()); notifyWeb("reminders", Reminders.enabled(this@MainActivity)) }
+            }
+        }
+
+        @JavascriptInterface fun scheduleReminders(json: String) {
+            if (onAppPage && json.length <= 64_000) Reminders.store(this@MainActivity, json)
+        }
+
+        /** Receives files the web app downloads (CSV export, JSON backup) and saves them to Downloads. */
+        @JavascriptInterface fun saveFile(name: String, dataUrl: String) {
             if (!onAppPage) return
             val safeName = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(120).ifBlank { "twmg-download" }
             val mime = dataUrl.substringAfter("data:", "").substringBefore(';').substringBefore(',').ifBlank { "application/octet-stream" }
@@ -182,7 +322,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun notificationsAllowed() = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
     private companion object {
+        const val KEY_APP_LOCK = "app_lock"
+        const val LOCK_AFTER_MS = 30_000L
         // The web app downloads via `a.download` + blob URLs, which WebView ignores. Remember each
         // blob as it's created, and hand downloads to the native bridge instead.
         const val DOWNLOAD_HOOK = """(function(){if(window.__twmgDownloads||!window.TWMGAndroid)return;window.__twmgDownloads=new Map();

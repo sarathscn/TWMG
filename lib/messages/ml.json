@@ -699,7 +699,28 @@
   "Set a monthly budget": "പ്രതിമാസ ബജറ്റ് സജ്ജമാക്കുക",
   "Pick a category and a limit to stay on track.": "ശരിയായ പാതയിൽ തുടരാൻ ഒരു വിഭാഗവും പരിധിയും തിരഞ്ഞെടുക്കുക.",
   "Record a transaction": "ഒരു ഇടപാട് രേഖപ്പെടുത്തുക",
-  "Add today’s spending or your latest income.": "ഇന്നത്തെ ചെലവോ ഏറ്റവും പുതിയ വരുമാനമോ ചേർക്കുക."
+  "Add today’s spending or your latest income.": "ഇന്നത്തെ ചെലവോ ഏറ്റവും പുതിയ വരുമാനമോ ചേർക്കുക.",
+  "Sign in with a passkey": "പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക",
+  "Passkeys": "പാസ്‌കീകൾ",
+  "Passkey": "പാസ്‌കീ",
+  "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.": "പാസ്‌വേഡിന് പകരം വിരലടയാളം, മുഖം അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക. നിങ്ങളുടെ ബയോമെട്രിക്സ് ഒരിക്കലും ഉപകരണം വിട്ടുപോകില്ല.",
+  "Added ": "ചേർത്തത് ",
+  "Last used ": "അവസാനം ഉപയോഗിച്ചത് ",
+  "Delete passkey": "പാസ്‌കീ ഇല്ലാതാക്കുക",
+  "No passkeys yet.": "ഇതുവരെ പാസ്‌കീകളില്ല.",
+  "Add a passkey": "ഒരു പാസ്‌കീ ചേർക്കുക",
+  "Passkey added. You can now sign in with it.": "പാസ്‌കീ ചേർത്തു. ഇനി അതുപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യാം.",
+  "Passkey removed.": "പാസ്‌കീ നീക്കം ചെയ്തു.",
+  "Delete this passkey? You can still sign in with your password.": "ഈ പാസ്‌കീ ഇല്ലാതാക്കണോ? നിങ്ങൾക്ക് പാസ്‌വേഡ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യാം.",
+  "This device": "ഈ ഉപകരണം",
+  "App lock": "ആപ്പ് ലോക്ക്",
+  "Unlock TWMG with your fingerprint, face or screen lock.": "വിരലടയാളം, മുഖം അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ഉപയോഗിച്ച് TWMG തുറക്കുക.",
+  "Set up a fingerprint, face or screen lock on this phone to use App lock.": "ആപ്പ് ലോക്ക് ഉപയോഗിക്കാൻ ഈ ഫോണിൽ വിരലടയാളം, മുഖം അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് സജ്ജമാക്കുക.",
+  "Bill reminders": "ബിൽ ഓർമ്മപ്പെടുത്തലുകൾ",
+  "Notifications for recurring bills, card payments and debts that are due.": "അടയ്ക്കേണ്ട ആവർത്തന ബില്ലുകൾ, കാർഡ് പേയ്‌മെന്റുകൾ, കടങ്ങൾ എന്നിവയുടെ അറിയിപ്പുകൾ.",
+  "{0} is due": "{0} അടയ്ക്കേണ്ട സമയമായി",
+  "{0} payment due": "{0} പേയ്‌മെന്റ് അടയ്ക്കേണ്ടതാണ്",
+  "Credit card payment": "ക്രെഡിറ്റ് കാർഡ് പേയ്‌മെന്റ്"
 }
 
 

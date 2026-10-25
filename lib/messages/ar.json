@@ -699,7 +699,28 @@
   "Set a monthly budget": "حدّد ميزانية شهرية",
   "Pick a category and a limit to stay on track.": "اختر فئة وحدًا للبقاء على المسار.",
   "Record a transaction": "سجّل معاملة",
-  "Add today’s spending or your latest income.": "أضف إنفاق اليوم أو أحدث دخل لك."
+  "Add today’s spending or your latest income.": "أضف إنفاق اليوم أو أحدث دخل لك.",
+  "Sign in with a passkey": "تسجيل الدخول بمفتاح المرور",
+  "Passkeys": "مفاتيح المرور",
+  "Passkey": "مفتاح المرور",
+  "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.": "سجّل الدخول ببصمتك أو وجهك أو قفل الشاشة بدلًا من كلمة المرور. بياناتك الحيوية لا تغادر جهازك أبدًا.",
+  "Added ": "أُضيف ",
+  "Last used ": "آخر استخدام ",
+  "Delete passkey": "حذف مفتاح المرور",
+  "No passkeys yet.": "لا توجد مفاتيح مرور بعد.",
+  "Add a passkey": "إضافة مفتاح مرور",
+  "Passkey added. You can now sign in with it.": "تمت إضافة مفتاح المرور. يمكنك الآن تسجيل الدخول به.",
+  "Passkey removed.": "تمت إزالة مفتاح المرور.",
+  "Delete this passkey? You can still sign in with your password.": "حذف مفتاح المرور هذا؟ لا يزال بإمكانك تسجيل الدخول بكلمة المرور.",
+  "This device": "هذا الجهاز",
+  "App lock": "قفل التطبيق",
+  "Unlock TWMG with your fingerprint, face or screen lock.": "افتح TWMG ببصمتك أو وجهك أو قفل الشاشة.",
+  "Set up a fingerprint, face or screen lock on this phone to use App lock.": "اضبط بصمة أو وجهًا أو قفل شاشة على هذا الهاتف لاستخدام قفل التطبيق.",
+  "Bill reminders": "تذكيرات الفواتير",
+  "Notifications for recurring bills, card payments and debts that are due.": "إشعارات للفواتير المتكررة ومدفوعات البطاقات والديون المستحقة.",
+  "{0} is due": "{0} مستحق",
+  "{0} payment due": "دفعة {0} مستحقة",
+  "Credit card payment": "دفعة البطاقة الائتمانية"
 }
 
 

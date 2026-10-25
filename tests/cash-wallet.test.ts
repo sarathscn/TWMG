@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type {Account,Transaction} from '../lib/finance.ts';
-import {balance,overdrawn,isCashMethod,cashLikeTypes,nonNegativeTypes} from '../lib/finance.ts';
+import {balance,overdrawn,isCashMethod,cashLikeTypes,nonNegativeTypes,categoryRenameUpdates} from '../lib/finance.ts';
 import {accountSchema,itemSchema,partySchema} from '../lib/record-schemas.ts';
 import {profileDetailsSchema} from '../lib/profile.ts';
 import {categorySchema,paymentMethodSchema} from '../lib/preferences.ts';
@@ -22,3 +22,4 @@ test('Any hex color is accepted and normalised; invalid colors and unknown icons
 test('Profiles, categories and payment methods share the color and icon rules',()=>{assert.equal(profileDetailsSchema.parse({name:'Me',country:'India',color:'#123abc',emoji:'🌿'}).color,'#123abc');assert.throws(()=>profileDetailsSchema.parse({name:'Me',country:'India',color:'#12'}));assert.equal(categorySchema.parse({id:'c',name:'Food',emoji:'🍽️'}).color,'#2d634a');assert.equal(paymentMethodSchema.parse({id:'m',name:'UPI',country:'India',color:'#00aa00',emoji:'📱'}).emoji,'📱')});
 test('Amounts are capped at 999,999,999 major units in every currency',()=>{assert.equal(parseMoney(String(maxAmountMajor),'INR'),99999999900);assert.throws(()=>parseMoney('1000000000','INR'));assert.equal(parseMoney('999999999.999','BHD'),999999999999)});
 test('Icon text stays readable on light and dark custom colors',()=>{assert.equal(readableOn('#ffffff'),'#1d2b22');assert.equal(readableOn('#000000'),'#ffffff')});
+test('Renaming a category carries over to budgets and recurring bills, not unrelated ones',()=>{const data={budgets:[{id:'b1',name:'Food',category:'Food',amount:100},{id:'b2',name:'Eating out',category:'Food',amount:50},{id:'b3',name:'Fuel',category:'Transport',amount:10}],recurring:[{id:'r1',name:'Meal plan',category:'Food',amount:9,type:'Monthly'}]};const u=categoryRenameUpdates(data,'Food','Groceries');assert.deepEqual(u.map(x=>x.value.id),['b1','b2','r1']);assert.equal(u[0].value.name,'Groceries');assert.equal(u[1].value.name,'Eating out');assert.ok(u.every(x=>x.value.category==='Groceries'));assert.deepEqual(categoryRenameUpdates(data,'Food','Food'),[])});

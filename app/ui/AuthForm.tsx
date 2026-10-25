@@ -1,10 +1,29 @@
 'use client';
 import { useI18n, ValidatedForm } from './UIProvider';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { KeyRound } from 'lucide-react';
 import { createClient } from '../../lib/supabase/client';
+import { passkeysAvailable, passkeyMessage } from '../../lib/passkeys';
 export function AuthForm() {
     const { tr, text, confirmAction } = useI18n();
     const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login'), [email, setEmail] = useState(''), [password, setPassword] = useState(''), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
+    const [passkeys, setPasskeys] = useState(false);
+    useEffect(() => { passkeysAvailable().then(setPasskeys); }, []);
+    async function passkeySignIn() {
+        setBusy(true);
+        setMessage('');
+        try {
+            const { data, error } = await createClient().auth.signInWithPasskey();
+            if (error) throw error;
+            if (data?.session) window.location.assign('/');
+        }
+        catch (e) {
+            setMessage(passkeyMessage(e));
+        }
+        finally {
+            setBusy(false);
+        }
+    }
     async function submit(e: FormEvent) {
         e.preventDefault();
         setBusy(true);
@@ -41,5 +60,5 @@ export function AuthForm() {
             setBusy(false);
         }
     }
-    return <ValidatedForm className="auth-form" onSubmit={submit}><label>{text(mode === 'login' ? 'Email or username' : 'Email')}<input type={mode === 'login' ? 'text' : 'email'} autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)}/></label>{mode !== 'forgot' && <label>{tr("Password")}<input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={8} required value={password} onChange={e => setPassword(e.target.value)}/></label>}{mode === 'login' && <button type="button" className="text-button auth-forgot" onClick={() => { setMode('forgot'); setMessage(''); }}>{tr("Forgot password?")}</button>}<button className="primary identity-continue" disabled={busy}>{text(busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link')}</button><button type="button" className="identity-signout" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }}>{text(mode === 'signup' ? 'Already have an account? Sign in' : mode === 'forgot' ? 'Back to sign in' : 'New here? Create an account')}</button>{text(message && <p className="identity-error" role="status">{text(message, true)}</p>, true)}</ValidatedForm>;
+    return <ValidatedForm className="auth-form" onSubmit={submit}><label>{text(mode === 'login' ? 'Email or username' : 'Email')}<input type={mode === 'login' ? 'text' : 'email'} autoComplete={passkeys && mode === 'login' ? 'username webauthn' : 'username'} maxLength={254} required value={email} onChange={e => setEmail(e.target.value)}/></label>{mode !== 'forgot' && <label>{tr("Password")}<input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={8} maxLength={200} required value={password} onChange={e => setPassword(e.target.value)}/></label>}{mode === 'login' && <button type="button" className="text-button auth-forgot" onClick={() => { setMode('forgot'); setMessage(''); }}>{tr("Forgot password?")}</button>}<button className="primary identity-continue" disabled={busy}>{text(busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link')}</button>{passkeys && mode === 'login' && <button type="button" className="secondary passkey-signin" disabled={busy} onClick={passkeySignIn}><KeyRound size={16}/>{tr("Sign in with a passkey")}</button>}<button type="button" className="identity-signout" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }}>{text(mode === 'signup' ? 'Already have an account? Sign in' : mode === 'forgot' ? 'Back to sign in' : 'New here? Create an account')}</button>{text(message && <p className="identity-error" role="status">{text(message, true)}</p>, true)}</ValidatedForm>;
 }

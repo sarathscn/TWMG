@@ -1,4 +1,4 @@
-# The download bridge is called from JavaScript by name.
--keepclassmembers class com.sarathscn.twmg.MainActivity$DownloadBridge {
+# The native bridge is called from JavaScript by method name.
+-keepclassmembers class com.sarathscn.twmg.MainActivity$NativeBridge {
     @android.webkit.JavascriptInterface <methods>;
 }

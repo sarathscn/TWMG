@@ -35,6 +35,9 @@ export const isCashMethod=(name?:string)=>name?.trim().toLowerCase()==='cash';
 // Non-negative accounts (among `ids`) that the change from `before` to `after` would push below zero,
 // or further below zero for legacy balances. `nextAccounts` lets a pending account edit be checked.
 export function overdrawn(accounts:Account[],before:Transaction[],after:Transaction[],ids:(string|undefined)[],nextAccounts:Account[]=accounts){return nextAccounts.filter(a=>ids.includes(a.id)&&nonNegativeTypes.includes(a.type)).filter(a=>{const old=accounts.find(x=>x.id===a.id),now=balance(a,after);return now<0&&now<(old?balance(old,before):0)})}
+// Budgets and recurring bills that follow a category rename. Budgets named after their
+// category are renamed too; past transactions keep the name they were recorded with.
+export function categoryRenameUpdates(data:Pick<Data,'budgets'|'recurring'>,from:string,to:string){if(from===to)return [];return [...data.budgets.map(r=>({kind:'budgets' as const,r})),...data.recurring.map(r=>({kind:'recurring' as const,r}))].filter(({r})=>r.category===from).map(({kind,r})=>({kind,value:{...r,category:to,...(kind==='budgets'&&r.name===from?{name:to}:{})}}))}
 export function totals(ts:Transaction[]){return ts.reduce((s,t)=>({income:s.income+(t.type==='income'&&!t.partyId?t.amount:0),expense:s.expense+(t.type==='expense'&&!t.partyId?t.amount:0)}),{income:0,expense:0})}
 export function partyBalance(id:string,ts:Transaction[]){return ts.filter(t=>t.partyId===id).reduce((s,t)=>s+(['lend','repay'].includes(t.debtAction||'')?t.amount:-t.amount),0)}
 export function linkedTransactions(kind:LedgerKind,id:string,ts:Transaction[]){return ts.filter(t=>kind==='accounts'?(t.account===id||t.to===id):kind==='parties'?t.partyId===id:kind==='shared'?t.sharedGroupId===id:t.recurringId===id).sort((a,b)=>b.date.localeCompare(a.date))}

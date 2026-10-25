@@ -699,7 +699,28 @@
   "Set a monthly budget": "Set a monthly budget",
   "Pick a category and a limit to stay on track.": "Pick a category and a limit to stay on track.",
   "Record a transaction": "Record a transaction",
-  "Add today’s spending or your latest income.": "Add today’s spending or your latest income."
+  "Add today’s spending or your latest income.": "Add today’s spending or your latest income.",
+  "Sign in with a passkey": "Sign in with a passkey",
+  "Passkeys": "Passkeys",
+  "Passkey": "Passkey",
+  "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.": "Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.",
+  "Added ": "Added ",
+  "Last used ": "Last used ",
+  "Delete passkey": "Delete passkey",
+  "No passkeys yet.": "No passkeys yet.",
+  "Add a passkey": "Add a passkey",
+  "Passkey added. You can now sign in with it.": "Passkey added. You can now sign in with it.",
+  "Passkey removed.": "Passkey removed.",
+  "Delete this passkey? You can still sign in with your password.": "Delete this passkey? You can still sign in with your password.",
+  "This device": "This device",
+  "App lock": "App lock",
+  "Unlock TWMG with your fingerprint, face or screen lock.": "Unlock TWMG with your fingerprint, face or screen lock.",
+  "Set up a fingerprint, face or screen lock on this phone to use App lock.": "Set up a fingerprint, face or screen lock on this phone to use App lock.",
+  "Bill reminders": "Bill reminders",
+  "Notifications for recurring bills, card payments and debts that are due.": "Notifications for recurring bills, card payments and debts that are due.",
+  "{0} is due": "{0} is due",
+  "{0} payment due": "{0} payment due",
+  "Credit card payment": "Credit card payment"
 }
 
 
