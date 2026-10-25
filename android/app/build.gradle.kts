@@ -18,8 +18,8 @@ android {
         applicationId = "com.sarathscn.twmg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         buildConfigField("String", "APP_URL", "\"https://twmg.vercel.app\"")
     }
 
@@ -58,5 +58,5 @@ dependencies {
     // System biometric prompt for App lock; biometric data never reaches the app.
     implementation("androidx.biometric:biometric:1.1.0")
     // WebAuthn (passkeys) inside the WebView on supported devices.
-    implementation("androidx.webkit:webkit:1.12.1")
+    implementation("androidx.webkit:webkit:1.14.0")
 }
