@@ -115,3 +115,5 @@ img,svg,canvas{max-width:100%}
 .crumb-link{background:none;border:0;padding:3px 5px;margin:-3px -5px;border-radius:5px;font:inherit;font-size:10px;color:#9ba29a;cursor:pointer}.crumb-link:hover{color:var(--text);background:var(--soft)}
 .crumb b{overflow:hidden;text-overflow:ellipsis;max-width:240px}
 @media(max-width:700px){.crumbs{display:none}}
+/* Income and expense cards on the dashboard open their filtered transactions. */
+.metric-link{cursor:pointer;transition:border-color .15s,box-shadow .15s}.metric-link:hover{border-color:#b9c9b5;box-shadow:0 4px 14px #1c39230d}.metric-link:focus-visible{outline:3px solid #83ab8e;outline-offset:3px}
