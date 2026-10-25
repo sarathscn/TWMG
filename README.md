@@ -161,16 +161,16 @@ In **Authentication → Sign In / Providers → Email**:
    - **Root Directory:** leave as the repository root
    - **Build command:** `npm run build` · **Install command:** `npm ci`
    - **Node.js version:** 24.x (Project Settings → General; matches `engines` in `package.json`)
-4. **Environment Variables** — add both for **Production** and **Preview**:
+4. **Supabase connection** — this repository already points at the TWMG Supabase project through `lib/supabase/config.ts`, so no environment variables are required for that project. To use **your own** Supabase project instead, either edit the two defaults in `lib/supabase/config.ts`, or add these Vercel environment variables (they override the defaults) for **Production** and **Preview**:
 
    | Name | Value |
    |---|---|
    | `NEXT_PUBLIC_SUPABASE_URL` | your Project URL from step 1 |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | your publishable (or anon) key from step 1 |
 
-5. Click **Deploy** and note your production URL, e.g. `https://twmg.vercel.app`.
+5. Click **Deploy** and note your production URL, e.g. `https://twmg.vercel.app`. After changing environment variables, **Redeploy** — the values are built into the app.
 
-These two values are designed to be public (they ship to the browser). Your data stays protected by Row Level Security.
+The Project URL and publishable key are designed to be public (they ship to every browser). Your data stays protected by Row Level Security.
 
 ### 6. Finish the Auth redirect setup
 
@@ -197,11 +197,19 @@ Requires **Node.js 24** (Node 22.6+ also runs the app; tests need `--experimenta
 
 ```bash
 npm ci
-cp .env.example .env.local      # then fill in the two Supabase values
-npm run dev                     # http://localhost:3000
+npm run dev                     # http://localhost:3000, uses the project in lib/supabase/config.ts
 ```
 
-Use a separate Supabase project for development if you don't want to touch real data.
+To develop against a separate Supabase project (recommended, so you don't touch real data), copy `.env.example` to `.env.local` and fill in that project's URL and publishable key.
+
+To manage the database with the Supabase CLI:
+
+```bash
+npx supabase login
+npx supabase init                                   # only if supabase/config.toml doesn't exist yet
+npx supabase link --project-ref sssqzcjvxydawjfpsziy
+npx supabase db push                                # applies supabase/migrations
+```
 
 **Dev preview:** under `npm run dev` only, the sign-in screen shows **Skip sign-in (dev preview)**. It opens an empty, in-browser workspace for checking layouts. Nothing is sent to Supabase, saving requires a real session, and the button is compiled out of production builds.
 
@@ -227,8 +235,9 @@ To report a vulnerability, please open a private security advisory on the GitHub
 
 | Value | Where it goes | Public? |
 |---|---|---|
-| Supabase Project URL | Vercel env + `.env.local` | Yes |
-| Supabase publishable / anon key | Vercel env + `.env.local` | Yes — protected by RLS |
+| Supabase Project URL | `lib/supabase/config.ts` (default); optionally Vercel env or `.env.local` | Yes |
+| Supabase publishable / anon key | `lib/supabase/config.ts` (default); optionally Vercel env or `.env.local` | Yes — protected by RLS |
+| Postgres connection string | Supabase CLI or database tools only | **No** — contains the database password |
 | Supabase secret / service_role key | **Nowhere in this repo or Vercel.** Supabase injects it into the Edge Function automatically. | **No** |
 | Database password | Your password manager only | **No** |
 
@@ -256,7 +265,7 @@ Optional live checks (`tests/*-api.mjs`, `tests/rls.sql`) run against a **dedica
 
 | Symptom | Fix |
 |---|---|
-| "Supabase is not configured." | The two `NEXT_PUBLIC_SUPABASE_*` variables are missing. Add them in Vercel and **redeploy**, or fill `.env.local` and restart `npm run dev`. |
+| Sign-in can't reach Supabase | Check the URL and key in `lib/supabase/config.ts` (or your `NEXT_PUBLIC_SUPABASE_*` overrides), then **redeploy** on Vercel or restart `npm run dev`. |
 | Stuck on "Getting your profiles ready…" | Wrong URL/key, or the migrations weren't applied. Re-check step 1 and run all four migrations in order. |
 | Username sign-in fails, email sign-in works | The `twmg-auth` function isn't deployed, is named differently, or still has JWT verification on (step 3). |
 | Confirmation email opens localhost or the wrong site | Update Site URL and Redirect URLs (step 6). |

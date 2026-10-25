@@ -1,5 +1,6 @@
 import {sameOrigin} from '../../../lib/request-origin';
 import {createClient} from '../../../lib/supabase/server';
+import {supabaseUrl,supabaseKey} from '../../../lib/supabase/config';
 import {z} from 'zod';
 export const dynamic='force-dynamic';
 const inputSchema=z.object({action:z.enum(['update','change_password','delete_profile','delete_account']),displayName:z.string().trim().min(1).max(60).optional(),username:z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,30}$/,'Use 3–30 letters, numbers or underscores.').optional(),email:z.string().trim().email().max(254).optional(),password:z.string().max(200).optional(),currentPassword:z.string().min(1).max(200).optional(),newPassword:z.string().min(8).max(200).optional(),profile:z.string().uuid().optional(),confirmation:z.string().optional()});
@@ -7,7 +8,7 @@ export async function POST(req:Request){try{
  if(!sameOrigin(req))return Response.json({error:'Invalid origin'},{status:403});
  const raw=await req.text();if(raw.length>5000)throw Error('Request too large');const input=inputSchema.parse(JSON.parse(raw)),db=await createClient();const {data:{user},error}=await db.auth.getUser();if(error||!user)return Response.json({error:'Unauthorized'},{status:401});
  if(input.action==='delete_account'){
- const session=await db.auth.getSession();const result=await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+'/functions/v1/twmg-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,Authorization:'Bearer '+session.data.session?.access_token},body:JSON.stringify({action:input.action,password:input.password,confirmation:input.confirmation})});const data=await result.json();if(!result.ok)return Response.json(data,{status:result.status});await db.auth.signOut();return Response.json({ok:true});
+ const session=await db.auth.getSession();const result=await fetch(supabaseUrl+'/functions/v1/twmg-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:supabaseKey,Authorization:'Bearer '+session.data.session?.access_token},body:JSON.stringify({action:input.action,password:input.password,confirmation:input.confirmation})});const data=await result.json();if(!result.ok)return Response.json(data,{status:result.status});await db.auth.signOut();return Response.json({ok:true});
  }
  if(input.action==='change_password'){
   if(!input.currentPassword||!input.newPassword)throw Error('Enter your current and new password.');
