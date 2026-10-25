@@ -171,3 +171,5 @@ tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete)
 .passkey-list{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:2px}.passkey-list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.passkey-list li>span{flex:1;min-width:0}.passkey-list b{display:block;font-size:12px}.passkey-list small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
 .device-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}.device-toggle>span{display:flex;align-items:flex-start;gap:12px;min-width:0}.device-toggle>span>svg{flex-shrink:0;margin-top:2px;color:var(--accent)}
 .device-toggle b{display:block;font-size:12px}.device-toggle small{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5}.device-toggle input{width:40px;height:22px;accent-color:var(--accent);flex-shrink:0}
+/* Bank name and last digits / wallet reference under an account type. */
+.account-reference{display:block;font-size:10px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}

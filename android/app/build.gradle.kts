@@ -18,8 +18,8 @@ android {
         applicationId = "com.sarathscn.twmg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
         buildConfigField("String", "APP_URL", "\"https://twmg.vercel.app\"")
     }
 
@@ -59,4 +59,7 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     // WebAuthn (passkeys) inside the WebView on supported devices.
     implementation("androidx.webkit:webkit:1.14.0")
+    // Background reminder sync and delivery that survive Doze and process death.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    testImplementation("junit:junit:4.13.2")
 }

@@ -720,7 +720,28 @@
   "Notifications for recurring bills, card payments and debts that are due.": "അടയ്ക്കേണ്ട ആവർത്തന ബില്ലുകൾ, കാർഡ് പേയ്‌മെന്റുകൾ, കടങ്ങൾ എന്നിവയുടെ അറിയിപ്പുകൾ.",
   "{0} is due": "{0} അടയ്ക്കേണ്ട സമയമായി",
   "{0} payment due": "{0} പേയ്‌മെന്റ് അടയ്ക്കേണ്ടതാണ്",
-  "Credit card payment": "ക്രെഡിറ്റ് കാർഡ് പേയ്‌മെന്റ്"
+  "Credit card payment": "ക്രെഡിറ്റ് കാർഡ് പേയ്‌മെന്റ്",
+  "Bank details": "ബാങ്ക് വിവരങ്ങൾ",
+  "Bank name": "ബാങ്കിന്റെ പേര്",
+  "e.g. HDFC Bank": "ഉദാ. HDFC ബാങ്ക്",
+  "Only the last four digits are stored. Never enter your full account number.": "അവസാന നാല് അക്കങ്ങൾ മാത്രമേ സൂക്ഷിക്കൂ. പൂർണ്ണ അക്കൗണ്ട് നമ്പർ ഒരിക്കലും നൽകരുത്.",
+  "Wallet details": "വാലറ്റ് വിവരങ്ങൾ",
+  "Wallet or provider": "വാലറ്റ് അല്ലെങ്കിൽ ദാതാവ്",
+  "e.g. Paytm, PhonePe, BenefitPay": "ഉദാ. Paytm, PhonePe, BenefitPay",
+  "Reference": "റഫറൻസ്",
+  "Last 4 digits or wallet ID": "അവസാന 4 അക്കങ്ങൾ അല്ലെങ്കിൽ വാലറ്റ് ഐഡി",
+  "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.": "തിരിച്ചറിയാൻ അവസാന ചില അക്കങ്ങളോ വാലറ്റ് ഐഡിയോ ഉപയോഗിക്കുക. പൂർണ്ണ കാർഡ് അല്ലെങ്കിൽ അക്കൗണ്ട് നമ്പർ ഒരിക്കലും നൽകരുത്.",
+  "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.": "കാർഡ് ബില്ലുകൾ, ആവർത്തന പേയ്‌മെന്റുകൾ, കടങ്ങൾ, ലക്ഷ്യങ്ങൾ: 7 ദിവസം മുമ്പ് ഓർമ്മപ്പെടുത്തൽ, പിന്നെ അടയ്ക്കുന്നത് വരെ തുടർ ഓർമ്മപ്പെടുത്തലുകൾ.",
+  "{0} goal deadline": "{0} ലക്ഷ്യത്തിന്റെ അവസാന തീയതി",
+  "{0} still to save": "ഇനിയും {0} സേവ് ചെയ്യാനുണ്ട്",
+  "Due in {0} days": "{0} ദിവസത്തിനുള്ളിൽ അടയ്ക്കണം",
+  "Due tomorrow": "നാളെ അടയ്ക്കണം",
+  "Due today": "ഇന്ന് അടയ്ക്കണം",
+  "Overdue by {0} days": "{0} ദിവസം വൈകി",
+  "Overdue by 1 day": "1 ദിവസം വൈകി",
+  "Use 2–30 letters, digits or @ . _ -": "2–30 അക്ഷരങ്ങൾ, അക്കങ്ങൾ അല്ലെങ്കിൽ @ . _ - ഉപയോഗിക്കുക",
+  "Enter only the last few digits, never the full number.": "അവസാന ചില അക്കങ്ങൾ മാത്രം നൽകുക, പൂർണ്ണ നമ്പർ ഒരിക്കലും വേണ്ട.",
+  "Could not load reminders.": "ഓർമ്മപ്പെടുത്തലുകൾ ലോഡ് ചെയ്യാനായില്ല."
 }
 
 

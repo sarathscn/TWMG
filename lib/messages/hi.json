@@ -720,7 +720,28 @@
   "Notifications for recurring bills, card payments and debts that are due.": "देय आवर्ती बिलों, कार्ड भुगतानों और कर्ज़ों की सूचनाएँ।",
   "{0} is due": "{0} देय है",
   "{0} payment due": "{0} का भुगतान देय",
-  "Credit card payment": "क्रेडिट कार्ड भुगतान"
+  "Credit card payment": "क्रेडिट कार्ड भुगतान",
+  "Bank details": "बैंक विवरण",
+  "Bank name": "बैंक का नाम",
+  "e.g. HDFC Bank": "जैसे HDFC बैंक",
+  "Only the last four digits are stored. Never enter your full account number.": "केवल अंतिम चार अंक सहेजे जाते हैं। अपना पूरा खाता नंबर कभी न डालें।",
+  "Wallet details": "वॉलेट विवरण",
+  "Wallet or provider": "वॉलेट या प्रदाता",
+  "e.g. Paytm, PhonePe, BenefitPay": "जैसे Paytm, PhonePe, BenefitPay",
+  "Reference": "संदर्भ",
+  "Last 4 digits or wallet ID": "अंतिम 4 अंक या वॉलेट आईडी",
+  "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.": "पहचानने के लिए अंतिम कुछ अंक या अपना वॉलेट आईडी उपयोग करें। पूरा कार्ड या खाता नंबर कभी न डालें।",
+  "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.": "कार्ड बिल, आवर्ती भुगतान, कर्ज़ और लक्ष्य: 7 दिन पहले रिमाइंडर, फिर भुगतान होने तक फ़ॉलो-अप।",
+  "{0} goal deadline": "{0} लक्ष्य की समय-सीमा",
+  "{0} still to save": "{0} अभी बचाना बाकी",
+  "Due in {0} days": "{0} दिनों में देय",
+  "Due tomorrow": "कल देय",
+  "Due today": "आज देय",
+  "Overdue by {0} days": "{0} दिन से बकाया",
+  "Overdue by 1 day": "1 दिन से बकाया",
+  "Use 2–30 letters, digits or @ . _ -": "2–30 अक्षर, अंक या @ . _ - उपयोग करें",
+  "Enter only the last few digits, never the full number.": "केवल अंतिम कुछ अंक डालें, पूरा नंबर कभी नहीं।",
+  "Could not load reminders.": "रिमाइंडर लोड नहीं हो सके।"
 }
 
 

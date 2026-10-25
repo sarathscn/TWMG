@@ -720,7 +720,28 @@
   "Notifications for recurring bills, card payments and debts that are due.": "Notifications for recurring bills, card payments and debts that are due.",
   "{0} is due": "{0} is due",
   "{0} payment due": "{0} payment due",
-  "Credit card payment": "Credit card payment"
+  "Credit card payment": "Credit card payment",
+  "Bank details": "Bank details",
+  "Bank name": "Bank name",
+  "e.g. HDFC Bank": "e.g. HDFC Bank",
+  "Only the last four digits are stored. Never enter your full account number.": "Only the last four digits are stored. Never enter your full account number.",
+  "Wallet details": "Wallet details",
+  "Wallet or provider": "Wallet or provider",
+  "e.g. Paytm, PhonePe, BenefitPay": "e.g. Paytm, PhonePe, BenefitPay",
+  "Reference": "Reference",
+  "Last 4 digits or wallet ID": "Last 4 digits or wallet ID",
+  "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.": "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.",
+  "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.": "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.",
+  "{0} goal deadline": "{0} goal deadline",
+  "{0} still to save": "{0} still to save",
+  "Due in {0} days": "Due in {0} days",
+  "Due tomorrow": "Due tomorrow",
+  "Due today": "Due today",
+  "Overdue by {0} days": "Overdue by {0} days",
+  "Overdue by 1 day": "Overdue by 1 day",
+  "Use 2–30 letters, digits or @ . _ -": "Use 2–30 letters, digits or @ . _ -",
+  "Enter only the last few digits, never the full number.": "Enter only the last few digits, never the full number.",
+  "Could not load reminders.": "Could not load reminders."
 }
 
 

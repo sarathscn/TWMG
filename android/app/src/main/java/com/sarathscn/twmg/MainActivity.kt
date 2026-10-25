@@ -79,6 +79,7 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Reminders.createChannel(this)
+        if (Reminders.enabled(this)) Reminders.schedule(this)
         val root = FrameLayout(this)
         web = WebView(this).apply { setBackgroundColor(Color.TRANSPARENT) }
         root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -100,7 +101,7 @@ class MainActivity : FragmentActivity() {
             }
         })
         if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(startUrl(intent))
-        if (appLockEnabled()) lock()
+        if (isLockOn()) lock()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -112,7 +113,7 @@ class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         web.resumeTimers()
-        if (appLockEnabled() && !locked && backgroundedAt > 0 && SystemClock.elapsedRealtime() - backgroundedAt > LOCK_AFTER_MS) lock()
+        if (isLockOn() && !locked && backgroundedAt > 0 && SystemClock.elapsedRealtime() - backgroundedAt > LOCK_AFTER_MS) lock()
     }
 
     override fun onResume() { super.onResume(); web.onResume() }
@@ -195,8 +196,8 @@ class MainActivity : FragmentActivity() {
 
     // ---- App lock --------------------------------------------------------------------------
     private fun authenticators() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) BIOMETRIC_STRONG or DEVICE_CREDENTIAL else BIOMETRIC_WEAK or DEVICE_CREDENTIAL
-    private fun lockAvailable() = BiometricManager.from(this).canAuthenticate(authenticators()) == BiometricManager.BIOMETRIC_SUCCESS
-    private fun appLockEnabled() = prefs.getBoolean(KEY_APP_LOCK, false) && lockAvailable()
+    private fun canUseLock() = BiometricManager.from(this).canAuthenticate(authenticators()) == BiometricManager.BIOMETRIC_SUCCESS
+    private fun isLockOn() = prefs.getBoolean(KEY_APP_LOCK, false) && canUseLock()
 
     // While App lock is on, keep balances out of screenshots and the recent-apps preview.
     private fun applySecureFlag() {
@@ -265,40 +266,42 @@ class MainActivity : FragmentActivity() {
      * WebView is showing the app's own origin, so other pages can never reach them.
      */
     inner class NativeBridge {
-        @JavascriptInterface fun appLockAvailable(): Boolean = onAppPage && lockAvailable()
-        @JavascriptInterface fun appLockEnabled(): Boolean = onAppPage && appLockEnabled()
+        // Every method is guarded: a native failure must return a safe value, never throw into the page
+        // (WebView turns a Java exception into a JS error, which takes the whole screen down).
+        private inline fun <T> safe(fallback: T, block: () -> T): T = try { if (onAppPage) block() else fallback } catch (e: Throwable) { fallback }
+
+        @JavascriptInterface fun appLockAvailable(): Boolean = safe(false) { canUseLock() }
+        @JavascriptInterface fun appLockEnabled(): Boolean = safe(false) { isLockOn() }
 
         /** Turning App lock on or off requires a successful biometric/device-credential check. */
-        @JavascriptInterface fun setAppLockEnabled(enabled: Boolean) {
-            if (!onAppPage) return
+        @JavascriptInterface fun setAppLockEnabled(enabled: Boolean) = safe(Unit) {
             runOnUiThread {
-                if (!lockAvailable()) { notifyWeb("appLock", false); return@runOnUiThread }
-                authenticate(getString(if (enabled) R.string.enable_lock_title else R.string.disable_lock_title)) {
-                    prefs.edit().putBoolean(KEY_APP_LOCK, enabled).apply()
-                    applySecureFlag()
-                    notifyWeb("appLock", enabled)
-                }
-                notifyWeb("appLock", appLockEnabled())
+                try {
+                    if (!canUseLock()) { notifyWeb("appLock", false); return@runOnUiThread }
+                    notifyWeb("appLock", isLockOn())
+                    authenticate(getString(if (enabled) R.string.enable_lock_title else R.string.disable_lock_title)) {
+                        prefs.edit().putBoolean(KEY_APP_LOCK, enabled).apply()
+                        applySecureFlag()
+                        notifyWeb("appLock", enabled)
+                    }
+                } catch (e: Exception) { notifyWeb("appLock", isLockOn()) }
             }
         }
 
-        @JavascriptInterface fun remindersEnabled(): Boolean = onAppPage && Reminders.enabled(this@MainActivity) && notificationsAllowed()
+        @JavascriptInterface fun remindersEnabled(): Boolean = safe(false) { Reminders.enabled(this@MainActivity) && notificationsAllowed() }
 
-        @JavascriptInterface fun setRemindersEnabled(enabled: Boolean) {
-            if (!onAppPage) return
+        @JavascriptInterface fun setRemindersEnabled(enabled: Boolean) = safe(Unit) {
             runOnUiThread {
                 if (enabled && !notificationsAllowed() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
                 else { Reminders.setEnabled(this@MainActivity, enabled && notificationsAllowed()); notifyWeb("reminders", Reminders.enabled(this@MainActivity)) }
             }
         }
 
-        @JavascriptInterface fun scheduleReminders(json: String) {
-            if (onAppPage && json.length <= 64_000) Reminders.store(this@MainActivity, json)
-        }
+        /** The web app's data changed (a bill paid, a due date moved): refresh reminders from the server. */
+        @JavascriptInterface fun syncReminders(lang: String) = safe(Unit) { Reminders.requestSync(this@MainActivity, lang) }
 
         /** Receives files the web app downloads (CSV export, JSON backup) and saves them to Downloads. */
-        @JavascriptInterface fun saveFile(name: String, dataUrl: String) {
-            if (!onAppPage) return
+        @JavascriptInterface fun saveFile(name: String, dataUrl: String) = safe(Unit) {
             val safeName = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(120).ifBlank { "twmg-download" }
             val mime = dataUrl.substringAfter("data:", "").substringBefore(';').substringBefore(',').ifBlank { "application/octet-stream" }
             val result = runCatching {

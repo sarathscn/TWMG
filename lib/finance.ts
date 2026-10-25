@@ -1,4 +1,6 @@
-export type Account={id:string;name:string;type:string;country?:string;currency:string;opening:number;limit?:number;due?:string;cardType?:string;lastFour?:string;color?:string;emoji?:string};
+export type Account={id:string;name:string;type:string;country?:string;currency:string;opening:number;limit?:number;due?:string;cardType?:string;lastFour?:string;color?:string;emoji?:string;institution?:string;reference?:string};
+// Short identifier shown next to an account: "HDFC Bank •••• 1234", "Paytm · ref sarath@ok".
+export function accountReference(a:Pick<Account,'type'|'institution'|'lastFour'|'reference'|'cardType'>){const parts=[a.type==='Credit card'?a.cardType:a.institution,a.lastFour?'•••• '+a.lastFour:a.reference].filter(Boolean);return parts.join(' · ')}
 export type Party={id:string;name:string;notes?:string;color?:string;emoji?:string};
 export type Transaction={id:string;name:string;type:'income'|'expense'|'transfer';amount:number;account:string;to?:string;received?:number;category:string;date:string;partyId?:string;debtAction?:'lend'|'borrow'|'collect'|'repay';sharedGroupId?:string;recurringId?:string;paidBy?:string;participants?:string[];paymentMethod?:string;paymentMethodName?:string;notes?:string;tags?:string;splits?:{category:string;amount:number}[]};
 export type SharedExpense={id:string;name:string;amount:number;date:string;paidBy:string;notes?:string;participants?:string[];transactionId?:string};

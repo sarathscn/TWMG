@@ -720,7 +720,28 @@
   "Notifications for recurring bills, card payments and debts that are due.": "إشعارات للفواتير المتكررة ومدفوعات البطاقات والديون المستحقة.",
   "{0} is due": "{0} مستحق",
   "{0} payment due": "دفعة {0} مستحقة",
-  "Credit card payment": "دفعة البطاقة الائتمانية"
+  "Credit card payment": "دفعة البطاقة الائتمانية",
+  "Bank details": "تفاصيل البنك",
+  "Bank name": "اسم البنك",
+  "e.g. HDFC Bank": "مثل بنك HDFC",
+  "Only the last four digits are stored. Never enter your full account number.": "تُحفظ آخر أربعة أرقام فقط. لا تُدخل رقم حسابك الكامل أبدًا.",
+  "Wallet details": "تفاصيل المحفظة",
+  "Wallet or provider": "المحفظة أو المزوّد",
+  "e.g. Paytm, PhonePe, BenefitPay": "مثل Paytm وPhonePe وBenefitPay",
+  "Reference": "المرجع",
+  "Last 4 digits or wallet ID": "آخر 4 أرقام أو معرّف المحفظة",
+  "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.": "استخدم آخر بضعة أرقام أو معرّف محفظتك لتتعرّف عليها. لا تُدخل رقم بطاقة أو حساب كاملًا أبدًا.",
+  "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.": "فواتير البطاقات والمدفوعات المتكررة والديون والأهداف: تذكير قبل 7 أيام، ثم متابعات حتى يتم الدفع.",
+  "{0} goal deadline": "الموعد النهائي لهدف {0}",
+  "{0} still to save": "يتبقى ادخار {0}",
+  "Due in {0} days": "مستحق خلال {0} أيام",
+  "Due tomorrow": "مستحق غدًا",
+  "Due today": "مستحق اليوم",
+  "Overdue by {0} days": "متأخر {0} أيام",
+  "Overdue by 1 day": "متأخر يومًا واحدًا",
+  "Use 2–30 letters, digits or @ . _ -": "استخدم 2–30 حرفًا أو رقمًا أو @ . _ -",
+  "Enter only the last few digits, never the full number.": "أدخل آخر بضعة أرقام فقط، وليس الرقم الكامل أبدًا.",
+  "Could not load reminders.": "تعذّر تحميل التذكيرات."
 }
 
 

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
 import { BellRing, Fingerprint, KeyRound, Plus, Trash2 } from 'lucide-react';
 import { useI18n } from './UIProvider';
 import { createClient } from '../../lib/supabase/client';
@@ -12,10 +12,23 @@ type AndroidBridge = {
     setAppLockEnabled(enabled: boolean): void;
     remindersEnabled(): boolean;
     setRemindersEnabled(enabled: boolean): void;
-    scheduleReminders(json: string): void;
+    syncReminders(lang: string): void;
 };
-export const androidBridge = () => (typeof window !== 'undefined' ? (window as unknown as { TWMGAndroid?: Partial<AndroidBridge> }).TWMGAndroid : undefined);
-const hasDeviceFeatures = () => typeof androidBridge()?.appLockAvailable === 'function';
+const bridge = () => (typeof window !== 'undefined' ? (window as unknown as { TWMGAndroid?: Partial<AndroidBridge> }).TWMGAndroid : undefined);
+// Calls a native method without ever letting a native failure break the page: a Java exception
+// surfaces in WebView as a thrown JS error, which would otherwise take down the whole screen.
+export function callNative<K extends keyof AndroidBridge>(name: K, ...args: Parameters<AndroidBridge[K]>): ReturnType<AndroidBridge[K]> | undefined {
+    const b = bridge(), fn = b?.[name] as ((...a: unknown[]) => unknown) | undefined;
+    if (typeof fn !== 'function') return undefined;
+    try { return fn.apply(b, args) as ReturnType<AndroidBridge[K]>; } catch { return undefined; }
+}
+const hasDeviceFeatures = () => typeof bridge()?.appLockAvailable === 'function';
+// Keeps an optional panel's failure inside the panel instead of replacing the whole page.
+export class PanelBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+    state = { failed: false };
+    static getDerivedStateFromError() { return { failed: true }; }
+    render() { return this.state.failed ? null : this.props.children; }
+}
 // Passkey sign-in for this account. Supabase Auth stores only the public-key credential.
 export function PasskeyManager() {
     const { tr, text, confirmAction } = useI18n();
@@ -45,9 +58,8 @@ export function DeviceSettings() {
     const { tr } = useI18n();
     const [ready, setReady] = useState(false), [lockAvailable, setLockAvailable] = useState(false), [lock, setLock] = useState(false), [reminders, setReminders] = useState(false);
     useEffect(() => {
-        const b = androidBridge();
-        if (!hasDeviceFeatures() || !b) return;
-        setReady(true); setLockAvailable(!!b.appLockAvailable?.()); setLock(!!b.appLockEnabled?.()); setReminders(!!b.remindersEnabled?.());
+        if (!hasDeviceFeatures()) return;
+        setReady(true); setLockAvailable(!!callNative('appLockAvailable')); setLock(!!callNative('appLockEnabled')); setReminders(!!callNative('remindersEnabled'));
         // Native confirms changes after the biometric prompt or permission dialog.
         const onNative = (e: Event) => { const d = (e as CustomEvent).detail || {}; if (d.type === 'appLock') setLock(!!d.enabled); if (d.type === 'reminders') setReminders(!!d.enabled); };
         window.addEventListener('twmg-native', onNative);
@@ -55,7 +67,7 @@ export function DeviceSettings() {
     }, []);
     if (!ready) return null;
     return <section className="panel settings-panel device-panel"><h3>{tr("This device")}</h3>
-        <label className="device-toggle"><span><Fingerprint size={18}/><span><b>{tr("App lock")}</b><small>{tr(lockAvailable ? 'Unlock TWMG with your fingerprint, face or screen lock.' : 'Set up a fingerprint, face or screen lock on this phone to use App lock.')}</small></span></span><input type="checkbox" role="switch" checked={lock} disabled={!lockAvailable} onChange={e => androidBridge()?.setAppLockEnabled?.(e.target.checked)}/></label>
-        <label className="device-toggle"><span><BellRing size={18}/><span><b>{tr("Bill reminders")}</b><small>{tr("Notifications for recurring bills, card payments and debts that are due.")}</small></span></span><input type="checkbox" role="switch" checked={reminders} onChange={e => androidBridge()?.setRemindersEnabled?.(e.target.checked)}/></label>
+        <label className="device-toggle"><span><Fingerprint size={18}/><span><b>{tr("App lock")}</b><small>{tr(lockAvailable ? 'Unlock TWMG with your fingerprint, face or screen lock.' : 'Set up a fingerprint, face or screen lock on this phone to use App lock.')}</small></span></span><input type="checkbox" role="switch" checked={lock} disabled={!lockAvailable} onChange={e => callNative('setAppLockEnabled', e.target.checked)}/></label>
+        <label className="device-toggle"><span><BellRing size={18}/><span><b>{tr("Bill reminders")}</b><small>{tr("Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.")}</small></span></span><input type="checkbox" role="switch" checked={reminders} onChange={e => callNative('setRemindersEnabled', e.target.checked)}/></label>
     </section>;
 }

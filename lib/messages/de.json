@@ -720,7 +720,28 @@
   "Notifications for recurring bills, card payments and debts that are due.": "Benachrichtigungen für fällige wiederkehrende Rechnungen, Kartenzahlungen und Schulden.",
   "{0} is due": "{0} ist fällig",
   "{0} payment due": "{0}-Zahlung fällig",
-  "Credit card payment": "Kreditkartenzahlung"
+  "Credit card payment": "Kreditkartenzahlung",
+  "Bank details": "Bankdaten",
+  "Bank name": "Name der Bank",
+  "e.g. HDFC Bank": "z. B. HDFC Bank",
+  "Only the last four digits are stored. Never enter your full account number.": "Nur die letzten vier Ziffern werden gespeichert. Gib nie deine vollständige Kontonummer ein.",
+  "Wallet details": "Wallet-Details",
+  "Wallet or provider": "Wallet oder Anbieter",
+  "e.g. Paytm, PhonePe, BenefitPay": "z. B. Paytm, PhonePe, BenefitPay",
+  "Reference": "Referenz",
+  "Last 4 digits or wallet ID": "Letzte 4 Ziffern oder Wallet-ID",
+  "Use the last few digits or your wallet ID so you can recognise it. Never enter a full card or account number.": "Nutze die letzten Ziffern oder deine Wallet-ID zum Wiedererkennen. Gib nie eine vollständige Karten- oder Kontonummer ein.",
+  "Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.": "Kartenrechnungen, wiederkehrende Zahlungen, Schulden und Ziele: eine Erinnerung 7 Tage vorher, dann Nachfassungen bis zur Zahlung.",
+  "{0} goal deadline": "Frist für Ziel {0}",
+  "{0} still to save": "Noch {0} zu sparen",
+  "Due in {0} days": "Fällig in {0} Tagen",
+  "Due tomorrow": "Morgen fällig",
+  "Due today": "Heute fällig",
+  "Overdue by {0} days": "{0} Tage überfällig",
+  "Overdue by 1 day": "1 Tag überfällig",
+  "Use 2–30 letters, digits or @ . _ -": "Verwende 2–30 Buchstaben, Ziffern oder @ . _ -",
+  "Enter only the last few digits, never the full number.": "Gib nur die letzten Ziffern ein, nie die vollständige Nummer.",
+  "Could not load reminders.": "Erinnerungen konnten nicht geladen werden."
 }
 
 
