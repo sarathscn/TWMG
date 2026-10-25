@@ -1,9 +1,9 @@
 import {z} from 'zod';
 import {currencies,countries} from './countries.ts';
-import {cardTypes,recordColors,recordEmojis} from './card-options.ts';
+import {cardTypes,hexColor,recordEmojis} from './card-options.ts';
 export const moneySchema=z.number().int().safe().nonnegative().max(1e12);
 const label=z.string().trim().min(1).max(120);
-const appearance={color:z.enum(recordColors).optional(),emoji:z.enum(recordEmojis).optional()};
+export const appearance={color:z.string().regex(hexColor,'Choose a valid color.').transform(c=>c.toLowerCase()).optional(),emoji:z.enum(recordEmojis).optional()};
 const validDate=(s:string)=>/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s;
 const dueDate=z.string().refine(s=>s===''||validDate(s),'Choose a valid due date.');
 export const partySchema=z.object({id:label,name:label,notes:z.string().max(1000).optional(),...appearance});

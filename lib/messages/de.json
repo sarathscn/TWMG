@@ -677,7 +677,11 @@
   "Choose Brick": "Ziegelrot wählen",
   "Breadcrumb": "Navigationspfad",
   "View income transactions": "Einnahmen-Transaktionen anzeigen",
-  "View expense transactions": "Ausgaben-Transaktionen anzeigen"
+  "View expense transactions": "Ausgaben-Transaktionen anzeigen",
+  "Custom color": "Eigene Farbe",
+  "Hue": "Farbton",
+  "Hex color": "Hex-Farbe",
+  "Saturation and brightness": "Sättigung und Helligkeit"
 }
 
 

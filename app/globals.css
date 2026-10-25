@@ -131,3 +131,12 @@ tr.swipeable[data-swipe=edit]>td:first-child::before{content:var(--swipe-edit);r
 tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete);left:100%;margin-left:8px;color:var(--danger)}
 /* Toast notices follow the theme in dark mode. */
 [data-theme=dark] .toast:not(.error){background:var(--success-bg);color:var(--success-text);border:1px solid var(--line);box-shadow:0 7px 30px #0006}
+/* Shared colour picker: preset swatches, a rainbow "Custom" swatch, and an in-app picker that follows the theme. */
+.card-color-picker .custom-swatch{display:inline-flex;align-items:center;justify-content:center;color:#fff}.card-color-picker .custom-swatch:not(.is-custom){background:conic-gradient(#e5484d,#f5d90a,#46a758,#05a2c2,#3e63dd,#d6409f,#e5484d)}.custom-swatch:not(.is-custom) svg{filter:drop-shadow(0 1px 1px #0008)}
+.color-custom{flex-basis:100%;display:grid;gap:14px;margin-top:4px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.color-area{position:relative;height:150px;border-radius:9px;cursor:crosshair;touch-action:none;outline:none}.color-area:focus-visible{box-shadow:0 0 0 3px #83ab8e}
+.color-thumb{position:absolute;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #0007,0 2px 6px #0005;transform:translate(-50%,-50%);pointer-events:none}
+.color-hue{display:grid;gap:8px;font-size:11px;color:var(--muted)}.color-hue input{-webkit-appearance:none;appearance:none;width:100%;height:12px;padding:0;border:0;border-radius:6px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);box-shadow:none;cursor:pointer}
+.color-hue input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--surface);border:3px solid var(--text);box-shadow:0 1px 4px #0005}.color-hue input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--surface);border:3px solid var(--text)}
+.color-hex{display:flex;align-items:flex-end;gap:10px}.color-hex label{flex:1;margin:0}.color-hex input{font-family:ui-monospace,Menlo,Consolas,monospace;text-transform:lowercase}.color-hex input[aria-invalid=true]{border-color:var(--danger)}
+.color-preview{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);flex-shrink:0}

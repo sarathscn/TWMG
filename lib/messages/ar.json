@@ -677,7 +677,11 @@
   "Choose Brick": "اختيار الطوبي",
   "Breadcrumb": "مسار التنقل",
   "View income transactions": "عرض معاملات الدخل",
-  "View expense transactions": "عرض معاملات المصروفات"
+  "View expense transactions": "عرض معاملات المصروفات",
+  "Custom color": "لون مخصص",
+  "Hue": "درجة اللون",
+  "Hex color": "لون سداسي عشري",
+  "Saturation and brightness": "التشبع والسطوع"
 }
 
 

@@ -677,7 +677,11 @@
   "Choose Brick": "Choose Brick",
   "Breadcrumb": "Breadcrumb",
   "View income transactions": "View income transactions",
-  "View expense transactions": "View expense transactions"
+  "View expense transactions": "View expense transactions",
+  "Custom color": "Custom color",
+  "Hue": "Hue",
+  "Hex color": "Hex color",
+  "Saturation and brightness": "Saturation and brightness"
 }
 
 

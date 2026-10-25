@@ -677,7 +677,11 @@
   "Choose Brick": "ഇഷ്ടിക നിറം തിരഞ്ഞെടുക്കുക",
   "Breadcrumb": "നാവിഗേഷൻ പാത",
   "View income transactions": "വരുമാന ഇടപാടുകൾ കാണുക",
-  "View expense transactions": "ചെലവ് ഇടപാടുകൾ കാണുക"
+  "View expense transactions": "ചെലവ് ഇടപാടുകൾ കാണുക",
+  "Custom color": "ഇഷ്ടാനുസൃത നിറം",
+  "Hue": "വർണ്ണഭേദം",
+  "Hex color": "ഹെക്സ് നിറം",
+  "Saturation and brightness": "സാച്ചുറേഷനും തെളിച്ചവും"
 }
 
 
