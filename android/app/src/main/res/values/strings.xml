@@ -14,4 +14,5 @@
     <string name="locked_title">TWMG is locked</string>
     <string name="locked_body">Your balances stay hidden until you unlock.</string>
     <string name="unlock_button">Unlock</string>
+    <string name="lock_unavailable">App lock couldn\'t start on this device. Your setting wasn\'t changed.</string>
 </resources>

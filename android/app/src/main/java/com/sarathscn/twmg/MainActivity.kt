@@ -36,6 +36,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -44,7 +45,6 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import java.io.File
@@ -56,13 +56,15 @@ import java.io.File
  * and password reset, the photo picker, file downloads, an offline retry screen, a biometric
  * App lock, local bill reminders and passkeys (WebAuthn) where the device supports them.
  */
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private lateinit var lockView: View
     private val appUri: Uri = Uri.parse(BuildConfig.APP_URL)
     @Volatile private var onAppPage = false
     private var locked = false
     private var backgroundedAt = 0L
+    private lateinit var prompt: BiometricPrompt
+    private var onAuthenticated: (() -> Unit)? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private val prefs by lazy { getSharedPreferences("twmg", MODE_PRIVATE) }
     private val pickFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -78,6 +80,20 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // One prompt for the activity's lifetime, created in onCreate as the biometric library requires.
+        prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                val action = onAuthenticated
+                onAuthenticated = null
+                action?.invoke()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                onAuthenticated = null
+                // A cancelled toggle leaves the setting as it was; the web switch snaps back.
+                notifyWeb("appLock", isLockOn())
+            }
+        })
         Reminders.createChannel(this)
         if (Reminders.enabled(this)) Reminders.schedule(this)
         val root = FrameLayout(this)
@@ -219,14 +235,20 @@ class MainActivity : FragmentActivity() {
 
     /** Shows the system prompt; the app only learns success or failure, never biometric data. */
     private fun authenticate(title: String, onSuccess: () -> Unit) {
-        val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onSuccess()
-        })
-        prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
-            .setTitle(title)
-            .setSubtitle(getString(R.string.unlock_subtitle))
-            .setAllowedAuthenticators(authenticators())
-            .build())
+        if (isFinishing || isDestroyed) return
+        try {
+            onAuthenticated = onSuccess
+            prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
+                .setTitle(title)
+                .setSubtitle(getString(R.string.unlock_subtitle))
+                .setAllowedAuthenticators(authenticators())
+                .build())
+        } catch (e: Exception) {
+            // Never crash over the prompt: keep the current setting and tell the user.
+            onAuthenticated = null
+            notifyWeb("appLock", isLockOn())
+            Toast.makeText(this, R.string.lock_unavailable, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun buildLockView(): View = LinearLayout(this).apply {
