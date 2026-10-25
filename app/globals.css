@@ -195,3 +195,18 @@ tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete)
 [data-theme=dark] .member-chips.editable>span.is-self{color:#17221d}
 .modal .member-add{display:flex;gap:8px;align-items:stretch}.modal .member-add input{flex:1;min-width:0}.modal .member-add button{flex-shrink:0;display:inline-flex;align-items:center;gap:6px}
 .member-suggestions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}.member-suggestions small{width:100%;font-size:10px;color:var(--muted)}.member-suggestions button{display:inline-flex;align-items:center;gap:4px;border:1px dashed var(--line);background:transparent;color:var(--text);border-radius:999px;padding:5px 10px;font-size:11px;cursor:pointer}.member-suggestions button:hover{border-color:var(--accent);color:var(--accent)}
+/* Record colours in charts, filters and reports */
+.dashboard-grid .spending.account-diagram{grid-column:1/-1;grid-row:auto;order:10;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}.account-diagram .panel-head{grid-column:1/-1}
+@media(max-width:600px){.dashboard-grid .spending.account-diagram{grid-template-columns:minmax(0,1fr)}}
+.chart-segment{cursor:pointer;outline:none}.chart-segment:hover{opacity:.85}
+.account-diagram .panel-head{gap:10px;flex-wrap:wrap}.account-mode{display:inline-flex;padding:3px;gap:2px}.account-mode button{padding:5px 10px;font-size:10px}
+.category-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-inline-end:6px;vertical-align:middle}
+.category-badge{display:inline-flex;align-items:center}
+.filter-bar{padding:0 20px 14px;display:grid;gap:10px}.filter-selects{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.filter-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--accent);background:var(--soft);color:var(--text);border-radius:999px;padding:5px 9px;font-size:11px;cursor:pointer}.filter-chip b{font-weight:600}.filter-chip svg{opacity:.7}
+.filter-totals{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;margin:0 20px 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:11px;color:var(--muted)}.filter-totals span{display:flex;gap:8px;align-items:baseline}.filter-totals b{color:var(--text);font-size:14px}.filter-totals b.positive{color:var(--accent)}.filter-totals small{width:100%;font-size:10px}
+.report-filter-panel{margin-bottom:22px;padding-top:16px}
+.report-row b{display:inline-flex;align-items:center}
+@media(max-width:700px){.filter-bar{padding:0 12px 12px}.filter-selects{grid-template-columns:1fr 1fr}.filter-totals{margin:0 12px 12px}}
+@media print{.filter-selects{display:none}.filter-chips .text-button,.filter-chip svg{display:none}}

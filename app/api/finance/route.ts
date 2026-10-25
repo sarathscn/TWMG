@@ -4,6 +4,7 @@ import {createClient} from '../../../lib/supabase/server';
 import {validateTransaction,overdrawn,cashLikeTypes,isCashMethod,categoryRenameUpdates,groupMembers,removedMembers,withoutMembers,partySyncPlan,type Account,type Item,type Party,type Transaction,categories as defaultCategories} from '../../../lib/finance';
 import {z} from 'zod';
 import {countryForCurrency} from '../../../lib/countries';
+import {recordColors} from '../../../lib/card-options';
 import {categorySchema,paymentMethodSchema,defaultMethods} from '../../../lib/preferences';
 import {profileDetailsSchema,countryCurrencies} from '../../../lib/profile';
 import {accountSchema as account,itemSchema as item,sharedSchema,partySchema} from '../../../lib/record-schemas';
@@ -31,7 +32,7 @@ export async function GET(req:Request){try{
  const params=new URL(req.url).searchParams,id=params.get('profile')||ps[0].id;const selected=await owned(db,id,user.id);
  if(!selected.options_initialized||!selected.payment_countries?.includes(selected.country)){
  const current=await load(db,id);const names=[...new Set([...defaultCategories,...current.transactions.flatMap((t:Transaction)=>[t.category,...(t.splits?.map(s=>s.category)||[])]),...current.budgets.map(b=>b.category).filter(Boolean)])];
- const {error}=await db.rpc('initialize_profile_options',{target:id,category_rows:names.map((name,i)=>({id:id+'-cat-'+i,name,color:'#2d634a'})),method_rows:defaultMethods(selected.country).map((m,i)=>({id:id+'-pay-'+selected.country.replaceAll(' ','')+'-'+i,name:m.name,country:selected.country,enabled:true,custom:false,source:m.source}))});check(error);
+ const {error}=await db.rpc('initialize_profile_options',{target:id,category_rows:names.map((name,i)=>({id:id+'-cat-'+i,name,color:recordColors[i%recordColors.length]})),method_rows:defaultMethods(selected.country).map((m,i)=>({id:id+'-pay-'+selected.country.replaceAll(' ','')+'-'+i,name:m.name,country:selected.country,enabled:true,custom:false,source:m.source}))});check(error);
  }
  const accountSettings=await db.from('account_settings').select('username,display_name').eq('user_id',user.id).maybeSingle();check(accountSettings.error);
  if(params.has('history')){const result=await db.from('history').select('action,created,before,after').eq('profile',id).eq('record',params.get('history')!).order('created',{ascending:false}).limit(100);check(result.error);return Response.json({history:result.data},{headers:{'Cache-Control':'no-store'}})}

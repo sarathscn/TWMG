@@ -101,3 +101,22 @@ export function seed(currency='INR'):Data{
  const rows:[string,Transaction['type'],number,string,string,number][]=[['Monthly salary','income',95000,'bank','Salary',1],['Apartment rent','expense',18000,'bank','Home & utilities',2],['Freelance design','income',12500,'bank','Freelance',5],['Weekly groceries','expense',2450,'bank','Food & dining',5],['Amazon shopping','expense',3499,'card','Shopping',8],['Uber ride','expense',340,'bank','Transport',9],['Electricity bill','expense',1850,'bank','Home & utilities',10],['Weekend dinner','expense',1820,'card','Food & dining',11],['Spotify Premium','expense',119,'bank','Entertainment',12],['Zomato order','expense',485,'bank','Food & dining',14],['Fuel refill','expense',2000,'bank','Transport',15],['Nike running shoes','expense',4995,'card','Shopping',16],['Coffee at Third Wave','expense',320,'bank','Food & dining',18],['Netflix subscription','expense',649,'card','Entertainment',19],['Fresh vegetables','expense',680,'cash','Food & dining',20]];
  return {accounts,transactions:rows.map((r,i)=>({id:`tx${i}`,name:r[0],type:r[1],amount:r[2]*100,account:r[3],category:r[4],date:date(r[5])})),budgets:[{id:'b1',name:'Food & dining',category:'Food & dining',amount:1000000},{id:'b2',name:'Shopping',category:'Shopping',amount:1200000},{id:'b3',name:'Transport',category:'Transport',amount:500000}],goals:[{id:'g1',name:'Japan, here we come',amount:8500000,target:15000000,due:'2027-04-01'},{id:'g2',name:'Emergency fund',amount:12500000,target:30000000}],debts:[{id:'d1',name:'Weekend trip',party:'Arjun',type:'Lent',amount:450000,paid:150000,due:date(25)}],shared:[{id:'s1',name:'October apartment expenses',party:'Arjun, Meera',amount:2400000,paid:800000,members:3,due:date(28)}],recurring:[{id:'r1',name:'Netflix Premium',amount:64900,due:date(22),type:'Monthly',category:'Entertainment'},{id:'r2',name:'Internet · Airtel',amount:99900,due:date(24),type:'Monthly',category:'Home & utilities'},{id:'r3',name:'Apartment rent',amount:1800000,due:date(28),type:'Monthly',category:'Home & utilities'}]};
 }
+// Transaction filters shared by the Transactions list and Reports. Every set filter must match.
+// "any" for shared/recurring means "linked to any group / any bill".
+export type TxFilters={account?:string;party?:string;category?:string;shared?:string;recurring?:string};
+export const filterKeys=['account','party','category','shared','recurring'] as const;
+export function activeFilters(f:TxFilters){return filterKeys.filter(k=>!!f[k])}
+export function applyFilters(ts:Transaction[],f:TxFilters){
+ return ts.filter(t=>(!f.account||t.account===f.account||t.to===f.account)
+  &&(!f.party||t.partyId===f.party)
+  &&(!f.category||(t.type!=='transfer'&&(t.splits?.length?t.splits.some(s=>s.category===f.category):t.category===f.category)))
+  &&(!f.shared||(f.shared==='any'?!!t.sharedGroupId:t.sharedGroupId===f.shared))
+  &&(!f.recurring||(f.recurring==='any'?!!t.recurringId:t.recurringId===f.recurring)));
+}
+// Amount of a transaction that belongs to a category (split transactions count only their part).
+export function categoryAmount(t:Transaction,category:string){return t.splits?.length?t.splits.filter(s=>s.category===category).reduce((s,x)=>s+x.amount,0):t.category===category?t.amount:0}
+// Per-account money in and out for the account diagram. Transfers count as out of the source
+// and into the destination; debt movements count too, since they move real money.
+export function accountActivity(accounts:Account[],ts:Transaction[]){
+ return accounts.map(a=>{let income=0,expense=0;for(const t of ts){if(t.account===a.id){if(t.type==='income')income+=t.amount;else expense+=t.amount}if(t.type==='transfer'&&t.to===a.id)income+=t.received??t.amount}return {id:a.id,name:a.name,currency:a.currency,income,expense}});
+}
