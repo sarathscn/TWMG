@@ -799,5 +799,6 @@
   "All shared status": "साझा: सभी",
   "All recurring status": "आवर्ती: सभी",
   "Remove filter {0}": "फ़िल्टर {0} हटाएँ",
-  "Reset filters": "फ़िल्टर रीसेट करें"
+  "Reset filters": "फ़िल्टर रीसेट करें",
+  "Show {0} transactions": "{0} के लेन-देन दिखाएँ"
 }

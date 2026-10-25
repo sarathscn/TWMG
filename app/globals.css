@@ -210,3 +210,29 @@ tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete)
 .report-row b{display:inline-flex;align-items:center}
 @media(max-width:700px){.filter-bar{padding:0 12px 12px}.filter-selects{grid-template-columns:1fr 1fr}.filter-totals{margin:0 12px 12px}}
 @media print{.filter-selects{display:none}.filter-chips .text-button,.filter-chip svg{display:none}}
+/* Ledger header: actions sit at the end of the row instead of taking half the width */
+.page-heading>.ledger-actions{flex:0 0 auto;justify-content:flex-end;align-items:center}
+.ledger-actions button{white-space:nowrap;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+@media(max-width:600px){.page-heading:has(>.ledger-actions){flex-wrap:wrap}.page-heading>.ledger-actions{flex:1 1 100%}}
+/* Category: a small colour button with its icon, then the name */
+.category-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:10px;font-weight:600;line-height:1.2;cursor:pointer;box-shadow:0 1px 2px #0000000f;transition:box-shadow .15s,transform .15s,border-color .15s}
+.category-chip>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+button.category-chip:hover{box-shadow:0 2px 8px #00000018;transform:translateY(-1px)}button.category-chip:active{transform:translateY(0)}
+.category-icon{flex-shrink:0;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;box-shadow:inset 0 -2px 0 #0000001f,0 1px 3px #0000002e}
+.category-chip.is-transfer{cursor:default;color:var(--muted)}.category-chip.is-transfer .category-icon{background:var(--soft);color:var(--muted)}
+/* Swiping with a mouse never selects text */
+.swipeable.swiping{user-select:none;-webkit-user-select:none;cursor:grabbing}
+/* Phones: each transaction is a card, so the table never scrolls sideways */
+@media(max-width:700px){
+ .table-wrap:has(>.tx-table){overflow:visible}
+ .tx-table{display:block;width:100%}.tx-table thead{display:none}.tx-table tbody{display:block}
+ .tx-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"name amount act" "cat cat act" "acct date act";gap:7px 10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+ .tx-table.compact tbody tr{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name amount" "cat date" "acct acct"}
+ .tx-table td{display:block!important;padding:0!important;border:0!important;min-width:0;text-align:start;white-space:normal}
+ .tx-table .tx-c-name{grid-area:name}.tx-table .tx-c-amount{grid-area:amount;text-align:end;white-space:nowrap;font-size:12px}
+ .tx-table .tx-c-category{grid-area:cat}.tx-table .tx-c-date{grid-area:date;text-align:end;white-space:nowrap;font-size:10px;color:var(--muted)}
+ .tx-table .tx-c-account{grid-area:acct;display:flex!important;align-items:center;min-width:0}.tx-table .tx-c-account>span:last-child{min-width:0;overflow:hidden}
+ .tx-table .tx-c-account b,.tx-table .tx-account-type{display:inline;font-size:10px}.tx-table .tx-account-type{margin-inline-start:6px}
+ .tx-table .tx-c-actions{grid-area:act;align-self:center}
+ .tx-table .tx-name{min-width:0}.tx-table .tx-name>span:last-child{min-width:0;flex:1}.tx-table .tx-name b{font-size:12px;display:block;overflow-wrap:anywhere}.tx-table .tx-name small{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}

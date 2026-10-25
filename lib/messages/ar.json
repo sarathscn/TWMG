@@ -799,5 +799,6 @@
   "All shared status": "المشتركة: الكل",
   "All recurring status": "المتكررة: الكل",
   "Remove filter {0}": "إزالة مرشح {0}",
-  "Reset filters": "إعادة ضبط المرشحات"
+  "Reset filters": "إعادة ضبط المرشحات",
+  "Show {0} transactions": "عرض معاملات {0}"
 }

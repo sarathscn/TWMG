@@ -799,5 +799,6 @@
   "All shared status": "Geteilt: alle",
   "All recurring status": "Wiederkehrend: alle",
   "Remove filter {0}": "Filter {0} entfernen",
-  "Reset filters": "Filter zurücksetzen"
+  "Reset filters": "Filter zurücksetzen",
+  "Show {0} transactions": "{0}-Buchungen anzeigen"
 }

@@ -6,6 +6,7 @@ import { defaultMethods, type Category, type PaymentMethod } from '../../lib/pre
 import { countries } from '../../lib/countries';
 import { ThemedSelect } from './Controls';
 import { AppearancePicker, RecordIcon } from './RecordAppearance';
+import { Swipeable } from './Swipeable';
 import { nextCategoryColor } from '../../lib/colors';
 type Save = (kind: string, value: any, action?: string) => Promise<boolean>;
 export function CatalogManager({ kind, rows, country, busy, error, save, colorOf }: {
@@ -22,6 +23,13 @@ export function CatalogManager({ kind, rows, country, busy, error, save, colorOf
     const [editing, setEditing] = useState<Category | PaymentMethod | null>(null), [name, setName] = useState(''), [selectedCountry, setSelectedCountry] = useState(country), [filterCountry, setFilterCountry] = useState(country), [color, setColor] = useState(kind === 'paymentMethods' ? '' : nextCategoryColor(rows)), [emoji, setEmoji] = useState(''), [enabled, setEnabled] = useState(true), [formError, setFormError] = useState('');
     const payments = kind === 'paymentMethods';
     function edit(row?: Category | PaymentMethod) { setEditing(row || null); setName(row?.name || ''); setColor(payments ? row?.color || '' : row ? (colorOf?.(row) || row.color || nextCategoryColor(rows)) : nextCategoryColor(rows)); setEmoji(row?.emoji || ''); setSelectedCountry((row as PaymentMethod)?.country || country); setEnabled((row as PaymentMethod)?.enabled ?? true); setFormError(''); }
+    // Delete always asks first, whether from the button or a swipe.
+    async function remove(row: Category | PaymentMethod) {
+        if (await confirmAction('Delete ' + row.name + '? Past transactions keep their details.')) {
+            if (await save(kind, row, 'delete') && editing?.id === row.id)
+                edit();
+        }
+    }
     async function submit(e: FormEvent) {
         e.preventDefault();
         setFormError('');
@@ -41,14 +49,7 @@ export function CatalogManager({ kind, rows, country, busy, error, save, colorOf
                             break;
                     }
                 }
-            }}>{tr("Add suggested methods for ")}{text(filterCountry)}</button>}{rows.filter(row => !payments || (row as PaymentMethod).country === filterCountry).sort((a, b) => a.name.localeCompare(b.name)).map(row => <div className="catalog-row" key={row.id}><RecordIcon record={colorOf ? { ...row, color: colorOf(row) } : row} fallback={payments ? <Wallet size={18}/> : <Tags size={18}/>}/><div><b>{row.name}</b>{text(payments && <small>{text((row as PaymentMethod).country)} · {text((row as PaymentMethod).custom ? 'Custom' : 'Suggested')} · {text((row as PaymentMethod).enabled ? 'Enabled' : 'Disabled')}</small>)}{text(payments && (row as PaymentMethod).source && <a className="text-button" href={(row as PaymentMethod).source} target="_blank" rel="noreferrer">{tr("Provider information \u2197")}</a>)}</div>{payments && <button className="secondary method-toggle" disabled={busy} aria-label={tr(((row as PaymentMethod).enabled ? 'Disable ' : 'Enable ') + row.name)} onClick={() => save(kind, { ...row, enabled: !(row as PaymentMethod).enabled })}>{text((row as PaymentMethod).enabled ? 'Disable' : 'Enable')}</button>}<button className="icon-button" aria-label={tr('Edit ' + row.name)} onClick={() => edit(row)}><Pencil size={16}/></button><button className="icon-button danger" disabled={busy} aria-label={tr('Delete ' + row.name)} onClick={async () => {
-                if (await confirmAction('Delete ' + row.name + '? Past transactions keep their details.')) {
-                    if (await save(kind, row, 'delete')) {
-                        if (editing?.id === row.id)
-                            edit();
-                    }
-                }
-            }}><Trash2 size={16}/></button></div>)}{text(!rows.some(row => !payments || (row as PaymentMethod).country === filterCountry) && <div className="empty"><p>{tr("No entries yet. Create one to get started.")}</p></div>)}</section></div>;
+            }}>{tr("Add suggested methods for ")}{text(filterCountry)}</button>}{rows.filter(row => !payments || (row as PaymentMethod).country === filterCountry).sort((a, b) => a.name.localeCompare(b.name)).map(row => <Swipeable className="catalog-row" key={row.id} onEdit={() => edit(row)} onDelete={busy ? undefined : () => remove(row)}><RecordIcon record={colorOf ? { ...row, color: colorOf(row) } : row} fallback={payments ? <Wallet size={18}/> : <Tags size={18}/>}/><div><b>{row.name}</b>{text(payments && <small>{text((row as PaymentMethod).country)} · {text((row as PaymentMethod).custom ? 'Custom' : 'Suggested')} · {text((row as PaymentMethod).enabled ? 'Enabled' : 'Disabled')}</small>)}{text(payments && (row as PaymentMethod).source && <a className="text-button" href={(row as PaymentMethod).source} target="_blank" rel="noreferrer">{tr("Provider information \u2197")}</a>)}</div>{payments && <button className="secondary method-toggle" disabled={busy} aria-label={tr(((row as PaymentMethod).enabled ? 'Disable ' : 'Enable ') + row.name)} onClick={() => save(kind, { ...row, enabled: !(row as PaymentMethod).enabled })}>{text((row as PaymentMethod).enabled ? 'Disable' : 'Enable')}</button>}<button className="icon-button" aria-label={tr('Edit ' + row.name)} onClick={() => edit(row)}><Pencil size={16}/></button><button className="icon-button danger" disabled={busy} aria-label={tr('Delete ' + row.name)} onClick={() => remove(row)}><Trash2 size={16}/></button></Swipeable>)}{text(!rows.some(row => !payments || (row as PaymentMethod).country === filterCountry) && <div className="empty"><p>{tr("No entries yet. Create one to get started.")}</p></div>)}</section></div>;
 }
 export function AccountSettings({ user, profile, profileName, reload }: {
     user: {

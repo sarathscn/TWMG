@@ -799,5 +799,6 @@
   "All shared status": "പങ്കിട്ടത്: എല്ലാം",
   "All recurring status": "ആവർത്തനം: എല്ലാം",
   "Remove filter {0}": "{0} ഫിൽട്ടർ നീക്കുക",
-  "Reset filters": "ഫിൽട്ടറുകൾ പുനഃസജ്ജമാക്കുക"
+  "Reset filters": "ഫിൽട്ടറുകൾ പുനഃസജ്ജമാക്കുക",
+  "Show {0} transactions": "{0} ഇടപാടുകൾ കാണിക്കുക"
 }

@@ -799,5 +799,6 @@
   "All shared status": "All shared status",
   "All recurring status": "All recurring status",
   "Remove filter {0}": "Remove filter {0}",
-  "Reset filters": "Reset filters"
+  "Reset filters": "Reset filters",
+  "Show {0} transactions": "Show {0} transactions"
 }
