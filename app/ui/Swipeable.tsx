@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type CSSProperties, type ElementType, type HTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Pencil, Trash2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useI18n } from './UIProvider';
 // Distance (px) a swipe must travel before it edits/deletes, the furthest the row slides,
 // and how long (ms) a still finger must hold to open the long-press actions.
@@ -65,8 +65,8 @@ export function Swipeable({ as: Tag = 'div', onEdit, onDelete, children, classNa
         {children}
     </Tag>
     {menu && typeof document !== 'undefined' && createPortal(<div className="action-sheet-backdrop" onClick={() => setMenu(false)}><div className="action-sheet" role="menu" aria-label={tr('Actions')} onClick={e => e.stopPropagation()}>
-        {onEdit && <button type="button" role="menuitem" onClick={() => act(onEdit)}><Pencil size={17}/>{tr('Edit')}</button>}
-        {onDelete && <button type="button" role="menuitem" className="danger-action" onClick={() => act(onDelete)}><Trash2 size={17}/>{tr('Delete')}</button>}
+        {onEdit && <button type="button" role="menuitem" onClick={() => act(onEdit)}>{tr('Edit')}</button>}
+        {onDelete && <button type="button" role="menuitem" className="danger-action" onClick={() => act(onDelete)}>{tr('Delete')}</button>}
         <button type="button" className="cancel-action" onClick={() => setMenu(false)} autoFocus><X size={17}/>{tr('Cancel')}</button>
     </div></div>, document.body)}</>;
 }
