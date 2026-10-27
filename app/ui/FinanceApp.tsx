@@ -4,7 +4,7 @@ import { useI18n, ValidatedForm } from './UIProvider';
 import { useState, useEffect, useMemo, useRef, type FormEvent } from 'react';
 import { Compass, LayoutDashboard, ArrowLeftRight, Wallet, CreditCard, Handshake, Users, Repeat, Target, ChartNoAxesCombined, Settings, ChevronDown, ChevronLeft, ChevronRight, Plus, ArrowUpRight, ArrowDownLeft, ArrowRight, Bell, Search, Sun, Moon, PanelLeftClose, Globe, Download, X, Check, MoreHorizontal, Utensils, ShoppingBag, Car, House, Clapperboard, Briefcase, TrendingUp, Sparkles, Plane, ShieldCheck, LogOut, Menu, LoaderCircle, SlidersHorizontal, CheckCircle2, UserRound, Info } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { balance, totals, partyBalance, categories, cashLikeTypes, isCashMethod, nonNegativeTypes, accountReference, applyFilters, activeFilters, accountActivity, categoryAmount, type Data, type Account, type Transaction, type Profile, type Item, type TxFilters } from '../../lib/finance';
+import { balance, totals, partyBalance, categories, cashLikeTypes, isCashMethod, nonNegativeTypes, accountReference, validateTransaction, overdrawn, applyFilters, activeFilters, accountActivity, categoryAmount, type Data, type Account, type Transaction, type Profile, type Item, type TxFilters } from '../../lib/finance';
 import { colorMaps, incomeColor, expenseColor } from '../../lib/colors';
 import { reminders, type Reminder } from '../../lib/reminders';
 import { languages, navKeys } from '../../lib/i18n';
@@ -21,7 +21,10 @@ import { AppearancePicker, RecordIcon, emojiLabel } from './RecordAppearance';
 import { Swipeable } from './Swipeable';
 import { WelcomeScreen, GuidedTour, CompletionScreen, loadGuide, saveGuide, type TourStep } from './Onboarding';
 import { SetupChecklist } from './SetupChecklist';
-import { DeviceSettings, PasskeyManager, PanelBoundary, callNative } from './DeviceSecurity';
+import { DeviceSettings, PasskeyManager, PanelBoundary, callNative, isAndroidApp } from './DeviceSecurity';
+import { SyncIndicator, AndroidVersionPanel, type SyncState } from './AndroidApp';
+import { applyOps, applyChanges, sinceFor, offlineAllowed, readSnapshot, writeSnapshot, clearSnapshot, lastUser, isOfflineKind, type SyncOp, type OfflineKind } from '../../lib/offline-sync';
+import { validateLinks } from '../../lib/transaction-links';
 // Pages a link or notification may open directly with ?view=…
 const linkableViews = ['Overview', 'Transactions', 'Finance', 'Settings', 'Accounts', 'Credit cards', 'Debts', 'Shared expenses', 'Recurring', 'Budgets & goals', 'Reports', 'Profiles', 'Categories', 'Payment methods'];
 const appVersion = packageJson.version;
@@ -46,15 +49,45 @@ export default function FinanceApp() {
     const t = languages[lang], p = profiles.find(x => x.id === profile), currency = p?.currency || 'INR';
     const money = (n: number, c = currency) => new Intl.NumberFormat(t.locale, { style: 'currency', currency: c, maximumFractionDigits: fractionDigits(c), minimumFractionDigits: c === "BHD" ? 3 : n % currencyScale(c) ? fractionDigits(c) : 0 }).format(n / currencyScale(c));
     const date = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' });
-    async function load(id?: string) {
+    // ---- Android app: local-first data (lib/offline-sync.ts, SyncQueue.kt) ----
+    // The screen shows the last downloaded data plus queued changes, so it opens and saves instantly;
+    // the native queue uploads in the background and fresh server data is merged in when it arrives.
+    // The website keeps working directly online.
+    const [localFirst, setLocalFirst] = useState(false), [ops, setOps] = useState<SyncOp[]>([]), [sync, setSync] = useState<SyncState>({ state: 'idle', pending: 0, failed: 0 }), [online, setOnline] = useState(true);
+    const serverData = useRef<Data | null>(null), serverVersion = useRef<string | null>(null), serverProfile = useRef(''), userId = useRef(''), wasSyncing = useRef(false);
+    // Changes already uploaded but not yet in the downloaded copy: still shown, so nothing flickers
+    // away between an upload finishing and the refresh arriving. Cleared by every successful load.
+    const queued = useRef<SyncOp[]>([]), landed = useRef<SyncOp[]>([]), dropped = useRef(new Set<string>());
+    const readOps = (u: string): SyncOp[] => { try { const v = JSON.parse(String(callNative('queueList', u) || '[]')); return Array.isArray(v) ? v : []; } catch { return []; } };
+    function showLocal() {
+        const list = userId.current ? readOps(userId.current) : [];
+        landed.current = [...landed.current, ...queued.current.filter(o => !list.some(x => x.opId === o.opId) && !dropped.current.has(o.opId) && !landed.current.some(x => x.opId === o.opId))];
+        queued.current = list; setOps(list);
+        if (serverData.current) setData(applyOps(serverData.current, [...landed.current, ...list], serverProfile.current));
+    }
+    async function load(id?: string, incremental = false) {
+        const lf = isAndroidApp();
         try {
             setError('');
-            const x = await financeRequest('/api/finance' + (id ? '?profile=' + encodeURIComponent(id) : ''));
+            // Only what changed since the last download, when we already hold this profile's data.
+            const since = lf && incremental && id && serverData.current && serverProfile.current === id ? sinceFor(serverVersion.current) : null;
+            const x = await financeRequest('/api/finance' + (id ? '?profile=' + encodeURIComponent(id) : '') + (since ? '&since=' + encodeURIComponent(since) : ''));
             setSignedOut(false);
-            setData(x.data);
+            if (lf) {
+                const server: Data = x.changes ? applyChanges(serverData.current!, x.changes) : x.data;
+                const previous = lastUser();
+                if (previous && previous !== x.user.id) clearSnapshot(previous);
+                userId.current = x.user.id; serverData.current = server; serverVersion.current = x.version || null; serverProfile.current = x.profile; landed.current = [];
+                writeSnapshot({ user: x.user, profiles: x.profiles, profile: x.profile, data: server, version: x.version || null, verifiedAt: Date.now() });
+                callNative('setSyncUser', x.user.id);
+                setOnline(true);
+                showLocal();
+            }
+            else
+                setData(x.data);
             setProfiles(x.profiles);
             const remembered = localStorage.getItem('twmg-profile');
-            const selected = !data && !id && x.profiles.some((p: Profile) => p.id === remembered) ? remembered : x.profile;
+            const selected = lf ? x.profile : !data && !id && x.profiles.some((p: Profile) => p.id === remembered) ? remembered : x.profile;
             setProfile(selected);
             localStorage.setItem('twmg-profile', selected);
             setUser(x.user);
@@ -64,8 +97,16 @@ export default function FinanceApp() {
             if ((e as {
                 status?: number;
             }).status === 401) {
+                // The server no longer accepts this session: cached data is not shown to anyone signed out.
+                // Queued changes stay on the device and upload after the same account signs in again.
+                if (lf) { clearSnapshot(userId.current || lastUser()); serverData.current = null; }
                 setSignedOut(true);
                 setError('');
+            }
+            else if (lf && !(e as { status?: number }).status && serverData.current) {
+                // No connection: keep working from the device copy.
+                setOnline(false);
+                return false;
             }
             else
                 setError((e as Error).message);
@@ -90,7 +131,25 @@ export default function FinanceApp() {
     // Inside the Android app, every data change (a bill paid, a due date moved) re-syncs reminders
     // from /api/reminders, so completed items stop notifying straight away.
     useEffect(() => { if (data && !signedOut) callNative('syncReminders', lang); }, [data, signedOut, lang]);
-    useEffect(() => { load(); setDark(localStorage.getItem('twmg-theme') === 'dark'); const stored = localStorage.getItem('twmg-text-size'); if (stored === 'small' || stored === 'medium' || stored === 'large') setTextSize(stored); }, []);
+    // Android app: open straight from the device copy when this device still holds the session,
+    // then refresh in the background. First sign-in on a device downloads once.
+    function start() {
+        if (!isAndroidApp()) { load(); return; }
+        setLocalFirst(true);
+        // Offline app shell (production only: in development it would cache code that is still changing).
+        if (process.env.NODE_ENV === 'production') navigator.serviceWorker?.register('/sw.js').catch(() => { /* offline shell is optional */ });
+        const u = lastUser(), snap = u ? readSnapshot(u) : null;
+        if (snap && offlineAllowed(snap, callNative('hasSession') === true)) {
+            userId.current = u; serverData.current = snap.data; serverVersion.current = snap.version; serverProfile.current = snap.profile;
+            setUser(snap.user); setProfiles(snap.profiles as Profile[]); setProfile(snap.profile); setChooser(false); showLocal();
+            try { setSync(JSON.parse(String(callNative('syncStatus') || '{}'))); } catch { /* status arrives with the next event */ }
+            load(snap.profile, true);
+            return;
+        }
+        const remembered = localStorage.getItem('twmg-profile') || undefined;
+        load(remembered).then(ok => { if (ok && remembered) setChooser(false); else if (!ok && remembered) load(); });
+    }
+    useEffect(() => { start(); setDark(localStorage.getItem('twmg-theme') === 'dark'); const stored = localStorage.getItem('twmg-text-size'); if (stored === 'small' || stored === 'medium' || stored === 'large') setTextSize(stored); }, []);
 
     useEffect(() => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; localStorage.setItem('twmg-theme', dark ? 'dark' : 'light'); }, [dark]);
     useEffect(() => { document.documentElement.dataset.textSize = textSize; localStorage.setItem('twmg-text-size', textSize); }, [textSize]);
@@ -135,6 +194,8 @@ export default function FinanceApp() {
         return () => window.removeEventListener('popstate', restore);
     }, []);
     async function mutate(kind: string, value: any, action = 'save') {
+        if (localFirst && isOfflineKind(kind) && (action === 'save' || action === 'delete') && userId.current && serverData.current && data)
+            return saveLocal(kind, value, action);
         setBusy(true);
         setSaveError('');
         try {
@@ -145,13 +206,63 @@ export default function FinanceApp() {
             return true;
         }
         catch (e) {
-            setSaveError((e as Error).message);
+            setSaveError(!(e as { status?: number }).status && localFirst ? 'You are offline. This needs an internet connection.' : (e as Error).message);
             return false;
         }
         finally {
             setBusy(false);
         }
     }
+    // Saves on the device first (shown at once) and queues the upload. The same rules the server
+    // enforces are checked here, so a change that would be refused is refused straight away.
+    function saveLocal(kind: OfflineKind, value: any, action: 'save' | 'delete') {
+        setSaveError('');
+        try {
+            const current = data!, id = String(value?.id || crypto.randomUUID()), record = { ...value, id };
+            if (kind === 'transactions') {
+                const prior = current.transactions.find(x => x.id === id);
+                if (action === 'save') { if (record.type !== 'transfer') { delete record.to; delete record.received; } validateTransaction(record, current.accounts); validateLinks(record, current, currency); }
+                const after = action === 'delete' ? current.transactions.filter(x => x.id !== id) : [...current.transactions.filter(x => x.id !== id), record];
+                const over = overdrawn(current.accounts, current.transactions, after, [record.account, record.to, prior?.account, prior?.to]);
+                if (over.length) throw Error(`${action === 'delete' ? 'Deleting this would take' : 'This would take'} ${over[0].name} below zero. Cash and wallet balances can't be negative.`);
+            }
+            if (action === 'delete' && kind === 'accounts' && current.transactions.some(t => t.account === id || t.to === id)) throw Error('This account has transaction history. Remove its transactions first.');
+            if (action === 'delete' && ['parties', 'shared', 'recurring'].includes(kind) && current.transactions.some(t => t.partyId === id || t.sharedGroupId === id || t.recurringId === id)) throw Error('Remove the linked transactions first.');
+            if (action === 'save' && ['parties', 'categories', 'paymentMethods'].includes(kind) && ((current as any)[kind] || []).some((x: any) => x.id !== id && x.name.trim().toLowerCase() === String(record.name || '').trim().toLowerCase() && (kind !== 'paymentMethods' || x.country === record.country))) throw Error('This name already exists.');
+            const op: SyncOp = { opId: crypto.randomUUID(), user: userId.current, profile, kind, action, id, ...(action === 'save' ? { value: record } : {}), base: serverVersion.current, createdAt: Date.now() };
+            if (callNative('queueAdd', JSON.stringify(op)) !== true) throw Error('Could not save on this device. Please try again.');
+            showLocal();
+            setModal(null);
+            setNotice(action === 'delete' ? 'Record removed' : 'Saved');
+            return Promise.resolve(true);
+        }
+        catch (e) {
+            setSaveError((e as Error).message);
+            return Promise.resolve(false);
+        }
+    }
+    function retrySync(op: SyncOp, keepMine: boolean) { callNative('queueRetry', op.opId, keepMine); showLocal(); }
+    async function discardSync(op: SyncOp) {
+        if (!(await confirmAction('Discard this change? It is removed from this device and the online version is kept.', 'Discard'))) return;
+        dropped.current.add(op.opId); callNative('queueDiscard', op.opId); showLocal(); load(serverProfile.current, false);
+    }
+    // Upload progress from the native queue; fresh server data is merged once an upload finishes.
+    useEffect(() => {
+        if (!localFirst) return;
+        const onNative = (e: Event) => {
+            const d = (e as CustomEvent).detail;
+            if (d?.type !== 'sync' || !d.data) return;
+            setSync(d.data); showLocal();
+            if (d.data.state === 'offline') setOnline(false);
+            if (d.data.state === 'idle' && wasSyncing.current && serverProfile.current) load(serverProfile.current, true);
+            wasSyncing.current = d.data.state === 'syncing';
+        };
+        const up = () => { setOnline(true); callNative('syncNow'); if (serverProfile.current) load(serverProfile.current, true); };
+        const down = () => setOnline(false);
+        const back = () => { if (document.visibilityState === 'visible' && serverProfile.current) load(serverProfile.current, true); };
+        window.addEventListener('twmg-native', onNative); window.addEventListener('online', up); window.addEventListener('offline', down); document.addEventListener('visibilitychange', back);
+        return () => { window.removeEventListener('twmg-native', onNative); window.removeEventListener('online', up); window.removeEventListener('offline', down); document.removeEventListener('visibilitychange', back); };
+    }, [localFirst]);
     // Swipe-to-delete always asks first, using the themed confirm dialog.
     async function removeRecord(kind: string, value: any, message = 'Delete this record? This cannot be undone.') { if (await confirmAction(message)) await mutate(kind, value, 'delete'); }
     const popupOpen = !!modal || notifications || profileMenu;
@@ -355,7 +466,7 @@ export default function FinanceApp() {
  <aside className="sidebar"><a className="brand" href="#" onClick={e => { e.preventDefault(); go('Overview'); }}><span className="brand-mark"><TrendingUp size={25}/></span><span><strong>TWMG<span className="brand-period">.</span></strong><small>THE WAY MONEY GOES</small></span></a>
  <small className="nav-label">{tr("WORKSPACE")}</small><nav>{text([['Overview', LayoutDashboard], ['Transactions', ArrowLeftRight], ['Finance', Wallet], ['Settings', Settings]].map(([name, Icon]: any) => <button key={name} className={(view === name || (name === 'Finance' && ['Accounts', 'Credit cards', 'Debts', 'Shared expenses', 'Recurring', 'Budgets & goals'].includes(view)) || (name === 'Settings' && ['Account & sign-in', 'Data & privacy', 'Profiles', 'Categories', 'Payment methods', 'Reports', 'Language & theme', 'About'].includes(view))) ? 'active' : ''} onClick={() => go(name)}><Icon size={19}/><span>{text(name)}</span></button>))}</nav>
  <div className="sidebar-bottom"><div className="clarity-card"><span>✧</span><b>{tr("Small steps. Big possibilities.")}</b><p>{tr("Your future self will thank you.")}</p><button onClick={() => go('Budgets & goals')}>{tr("Set a savings goal ")}<ArrowUpRight size={14}/></button></div><div className="user-row"><span className="user-avatar">{(user.displayName || user.name).slice(0, 1)}</span><span><b>{user.displayName || user.name.split(' ')[0]}</b><small>{tr("Personal workspace")}</small></span></div></div></aside>
- <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-button collapse-control" aria-label={tr("Toggle sidebar")} onClick={() => setCollapsed(!collapsed)}><PanelLeftClose size={19}/></button><a className="mobile-site-name" href="#" aria-label={tr("TWMG home")} onClick={e => { e.preventDefault(); go('Overview'); }}>TWMG<span>.</span></a><nav className="crumbs" aria-label={tr("Breadcrumb")}>{text(crumbs.map((c, i) => <span className="crumb" key={i}>{i > 0 && <ChevronRight size={13} aria-hidden="true"/>}{c.to && i < crumbs.length - 1 ? <button type="button" className="crumb-link" onClick={() => go(c.to!)}>{c.label}</button> : <b aria-current="page">{c.label}</b>}</span>))}</nav></div><div className="top-actions"><label className="global-search"><Search size={16}/><input placeholder={tr("Search transactions\u2026")} maxLength={100} value={search} onChange={e => { setSearch(e.target.value); setLedger(null); setView('Transactions'); }}/></label><div className="notification-wrap"><button ref={bellRef} className="icon-button notification-button" aria-label={tr("Notifications")} aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={19}/>{notes.length > 0 && <i className="notification-count">{notes.length > 9 ? '9+' : notes.length}</i>}</button></div><button className="header-profile" aria-label={tr("Switch profile")} onClick={() => setProfileMenu(true)}><ProfileAvatar profile={p} size="small"/></button></div></header>
+ <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-button collapse-control" aria-label={tr("Toggle sidebar")} onClick={() => setCollapsed(!collapsed)}><PanelLeftClose size={19}/></button><a className="mobile-site-name" href="#" aria-label={tr("TWMG home")} onClick={e => { e.preventDefault(); go('Overview'); }}>TWMG<span>.</span></a><nav className="crumbs" aria-label={tr("Breadcrumb")}>{text(crumbs.map((c, i) => <span className="crumb" key={i}>{i > 0 && <ChevronRight size={13} aria-hidden="true"/>}{c.to && i < crumbs.length - 1 ? <button type="button" className="crumb-link" onClick={() => go(c.to!)}>{c.label}</button> : <b aria-current="page">{c.label}</b>}</span>))}</nav></div><div className="top-actions"><label className="global-search"><Search size={16}/><input placeholder={tr("Search transactions\u2026")} maxLength={100} value={search} onChange={e => { setSearch(e.target.value); setLedger(null); setView('Transactions'); }}/></label>{localFirst && <SyncIndicator status={sync} online={online} ops={ops} retry={retrySync} discard={discardSync}/>}<div className="notification-wrap"><button ref={bellRef} className="icon-button notification-button" aria-label={tr("Notifications")} aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={19}/>{notes.length > 0 && <i className="notification-count">{notes.length > 9 ? '9+' : notes.length}</i>}</button></div><button className="header-profile" aria-label={tr("Switch profile")} onClick={() => setProfileMenu(true)}><ProfileAvatar profile={p} size="small"/></button></div></header>
  <main key={view + (ledger ? ':' + ledger.kind + ':' + ledger.id : '')}><div className="welcome-strip"><span><i />{tr("YOUR MONEY, WITH A LITTLE MORE MEANING")}</span><span className="brand-malayalam">പണം പോകുന്ന വഴി</span></div>
  {text(ledger ? <LedgerPage ledger={ledger} data={data} money={money} table={txTable} back={backFromLedger} add={value => setModal({ kind: 'transactions', value })} edit={() => setModal({ kind: ledger.kind, value: ledger.kind === 'parties' ? data.parties?.find(x => x.id === ledger.id) : data[ledger.kind].find(x => x.id === ledger.id) })}>{text(ledger.kind === 'shared' && <SharedGroups initialTab="transactions" groups={data.shared.filter(g => g.id === ledger.id)} money={money} date={date} edit={value => setModal({ kind: 'shared', value })} remove={value => removeRecord('shared', value, 'Delete this group and its shared transactions?')} transaction={openSharedTransaction} removeEntry={removeSharedEntry} me={me} settle={value => setModal({ kind: 'repayment', value: { ...value, source: 'shared' } })}/>)}</LedgerPage> : <>
  {view === 'Overview' && <>
@@ -374,7 +485,7 @@ export default function FinanceApp() {
  {text(view === 'Finance' && <><div className="page-heading"><div><h1>{tr("Finance")}</h1><p>{tr("Your accounts, commitments and plans in one place.")}</p></div></div><div className="more-grid" data-tour="finance">{text([2, 3, 4, 5, 6, 7].map(i => { const Icon = icons[i]; return <button className="panel more-tile" key={navKeys[i]} onClick={() => go(navKeys[i])}><span className="more-icon"><Icon size={23}/></span><span><b>{text(t.nav[i])}</b><small>{text(['Accounts and balances', 'Card limits and repayments', 'Lending and borrowing', 'Groups and shared costs', 'Bills and subscriptions', 'Spending plans and savings goals'][i - 2])}</small></span><ChevronRight size={17}/></button>; }))}</div></>)}
  {view === 'Settings' && <><div className="page-heading"><div><h1>{tr("Settings")}</h1><p>{tr("Make TWMG work for you.")}</p></div></div><div className="more-grid" data-tour="settings">{text([['Profiles', Users, 'Your independent finance spaces'], ['Categories', Target, 'Organize income and spending'], ['Payment methods', Wallet, 'Manage country-specific payment methods'], ['Reports', ChartNoAxesCombined, 'Totals, breakdowns, CSV and PDF exports', 'reports-tile'], ['Language & theme', Globe, 'Language, appearance and accessibility'], ['Data & privacy', ShieldCheck, 'Backups, exports and data controls'], ['App guide', Compass, 'Replay the tour of the app', 'guide-tile'], ['About', Info, 'App information and version']].map(([name, Icon, description, tour]: any) => <button className="panel more-tile" key={name} data-tour={tour} onClick={() => name === 'App guide' ? openGuide(0) : go(name)}><span className="more-icon"><Icon size={23}/></span><span><b>{text(name)}</b><small>{text(description)}</small></span><ChevronRight size={17}/></button>))}</div></>}
  {text(view === 'Language & theme' && <><div className="page-heading"><div><h1>{tr("Language & theme")}</h1><p>{tr("A workspace that feels like you.")}</p></div></div><section className="panel settings-panel"><label>{tr("Language")}<ThemedSelect aria-label={tr("Language")} value={lang} onChange={e => setLang(e.target.value)}>{text(Object.entries(languages).map(([k, v]) => <option key={k} value={k}>{v.label}</option>))}</ThemedSelect></label><label>{tr("Theme")}<ThemedSelect aria-label={tr("Theme")} value={dark ? 'dark' : 'light'} onChange={e => setDark(e.target.value === 'dark')}><option value="light">{tr("Light")}</option><option value="dark">{tr("Dark")}</option></ThemedSelect></label><label>{tr("Text size")}<ThemedSelect aria-label={tr("Text size")} value={textSize} onChange={e => setTextSize(e.target.value as 'small' | 'medium' | 'large')}><option value="small">{tr("Small")}</option><option value="medium">{tr("Medium")}</option><option value="large">{tr("Large")}</option></ThemedSelect></label><p>{tr("Your language, text size and appearance preferences are saved on this device.")}</p></section></>)}
- {text(view === 'About' && <><div className="page-heading"><div><h1>{tr("About TWMG")}</h1><p>{tr("The Way Money Goes · പണം പോകുന്ന വഴി")}</p></div></div><section className="panel settings-panel about-panel"><span className="brand-mark"><TrendingUp size={25}/></span><h2>TWMG</h2><p>{tr("Hey there! Thanks for stopping by.")}</p><h3>{tr("Why this app exists")}</h3><p>{tr("Let’s be honest: tracking where your hard-earned cash goes shouldn't require a monthly subscription. Everywhere you look, basic finance trackers are locked behind paywalls. So, I decided to build something different.")}</p><h3>{tr("Built with AI, fueled by passion")}</h3><p>{tr("In this AI generation, The Way Money Goes was created by Sarath Chandran C to keep things simple, accessible, and purely AI-driven. No corporate bloat, no forced subscriptions—just a straightforward way to watch your expenses.")}</p><h3>{tr("A quick heads-up")}</h3><p>{tr("Since this is an independent project, you might stumble upon a bug or two along the way. If you do, bear with me! The best part? It is, and always will be, 100% free to use.")}</p><h3>{tr("Support the Creator")}</h3><p>{tr("If this app helps you keep your finances in check and you'd like to support its ongoing development (or just buy me a meal to keep the code flowing), you can drop a contribution here:")}</p><a className="primary about-support" href="https://buymeacoffee.com/sarathscn" target="_blank" rel="noreferrer">☕ {tr("Buy Me a Coffee / Support the Dev")}</a><p>{tr("Thanks for using the app and being part of the journey!")}</p><dl><div><dt>{tr("Version")}</dt><dd>{appVersion}</dd></div><div><dt>{tr("Platform")}</dt><dd>{tr("Web · Mobile web")}</dd></div><div><dt>{tr("Languages")}</dt><dd>{tr("English · हिन्दी · العربية · മലയാളം · Deutsch")}</dd></div></dl><button className="secondary" onClick={() => go('Data & privacy')}>{tr("Data & privacy")}</button></section></>)} {text((['Categories', 'Payment methods'].includes(view)) && <><div className="page-heading"><div><h1>{text(view)}</h1><p>{tr("Personalize the way you track your money.")}</p></div></div><CatalogManager key={profile + view} kind={view === 'Categories' ? 'categories' : 'paymentMethods'} rows={view === 'Categories' ? data.categories || [] : data.paymentMethods || []} colorOf={row => view === 'Categories' ? paint.category(row.name) : paint.method(row.id)} country={p?.country || 'India'} busy={busy} error={saveError} save={mutate}/></>, true)}
+ {text(view === 'About' && <><div className="page-heading"><div><h1>{tr("About TWMG")}</h1><p>{tr("The Way Money Goes · പണം പോകുന്ന വഴി")}</p></div></div><section className="panel settings-panel about-panel"><span className="brand-mark"><TrendingUp size={25}/></span><h2>TWMG</h2><p>{tr("Hey there! Thanks for stopping by.")}</p><h3>{tr("Why this app exists")}</h3><p>{tr("Let’s be honest: tracking where your hard-earned cash goes shouldn't require a monthly subscription. Everywhere you look, basic finance trackers are locked behind paywalls. So, I decided to build something different.")}</p><h3>{tr("Built with AI, fueled by passion")}</h3><p>{tr("In this AI generation, The Way Money Goes was created by Sarath Chandran C to keep things simple, accessible, and purely AI-driven. No corporate bloat, no forced subscriptions—just a straightforward way to watch your expenses.")}</p><h3>{tr("A quick heads-up")}</h3><p>{tr("Since this is an independent project, you might stumble upon a bug or two along the way. If you do, bear with me! The best part? It is, and always will be, 100% free to use.")}</p><h3>{tr("Support the Creator")}</h3><p>{tr("If this app helps you keep your finances in check and you'd like to support its ongoing development (or just buy me a meal to keep the code flowing), you can drop a contribution here:")}</p><a className="primary about-support" href="https://buymeacoffee.com/sarathscn" target="_blank" rel="noreferrer">☕ {tr("Buy Me a Coffee / Support the Dev")}</a><p>{tr("Thanks for using the app and being part of the journey!")}</p><dl><div><dt>{tr("Version")}</dt><dd>{appVersion}</dd></div><div><dt>{tr("Platform")}</dt><dd>{tr("Web · Mobile web")}</dd></div><div><dt>{tr("Languages")}</dt><dd>{tr("English · हिन्दी · العربية · മലയാളം · Deutsch")}</dd></div></dl><button className="secondary" onClick={() => go('Data & privacy')}>{tr("Data & privacy")}</button></section>{localFirst && <AndroidVersionPanel/>}</>)} {text((['Categories', 'Payment methods'].includes(view)) && <><div className="page-heading"><div><h1>{text(view)}</h1><p>{tr("Personalize the way you track your money.")}</p></div></div><CatalogManager key={profile + view} kind={view === 'Categories' ? 'categories' : 'paymentMethods'} rows={view === 'Categories' ? data.categories || [] : data.paymentMethods || []} colorOf={row => view === 'Categories' ? paint.category(row.name) : paint.method(row.id)} country={p?.country || 'India'} busy={busy} error={saveError} save={mutate}/></>, true)}
  {text(view === 'Transactions' && <>{text(sectionHeader(t.nav[1], 'Every little detail, all in one place.', 'transactions'))}<section className="panel" data-tour="tx-list"><div className="list-toolbar" data-tour="tx-find"><label className="search-box"><Search size={17}/><input maxLength={100} value={search} onChange={e => setSearch(e.target.value)} placeholder={tr("Search name, category, notes or tags")}/></label><div className="list-toolbar-row"><ThemedSelect aria-label={tr("Transaction type")} value={filter} onChange={e => setFilter(e.target.value)}><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option><option value="transfer">Transfers</option></ThemedSelect><span className="muted list-count">{text(visible.length)}{tr(" transactions")}</span></div></div>{text(filterBar)}{text((activeFilters(filters).length > 0 || filter !== 'all' || search) && <div className="filter-totals">{(() => { const f = flow(visible); return <><span>{tr("Money in")}<b className="positive">{text(money(f.in))}</b></span><span>{tr("Money out")}<b>{text(money(f.out))}</b></span><span>{tr("Net")}<b>{text(money(f.in - f.out))}</b></span><small>{tr("Totals in {0}; transfers are not counted.", currency)}</small></>; })()}</div>)}{text(txTable(visible))}</section></>)}
  {(view === 'Accounts' || view === 'Credit cards') && <>{text(sectionHeader(t.nav[view === 'Accounts' ? 2 : 3], view === 'Accounts' ? 'All your money. One clear picture.' : 'Stay in control of what you owe.', 'accounts'))}<div className="account-grid">{data.accounts.filter(a => view === 'Accounts' || a.type === 'Credit card').map((a, i) => { const amount = balance(a, data.transactions); return <Swipeable as="article" onEdit={() => setModal({ kind: 'accounts', value: a })} onDelete={() => removeRecord('accounts', a)} className={'panel account-card ' + (a.type === 'Credit card' ? 'credit-account' : '')} style={{ borderTop: `4px solid ${paint.account(a.id)}` }} key={a.id}><div className="account-card-top"><RecordIcon record={{ ...a, color: paint.account(a.id) }} className="account-bank-icon" fallback={a.type === 'Credit card' ? <CreditCard /> : <Wallet />}/><span>{text(a.type)}{a.type !== 'Credit card' && accountReference(a) && <small className="account-reference">{accountReference(a)}</small>}</span></div><button className="ledger-title" onClick={() => openLedger('accounts', a.id)}><h3>{a.name}</h3><ChevronRight size={17}/></button>{a.type === 'Credit card' && <div className="card-reference" style={{ background: paint.account(a.id) }}><span>{text(a.cardType || 'Credit card')}</span><span className="card-last-four">•••• {a.lastFour || '— — — —'}</span></div>}<button className="text-button" onClick={() => openLedger('accounts', a.id)}>{tr("View transactions ")}<ArrowRight size={14}/></button><small>{text(a.currency)}{tr(" ACCOUNT")}</small><h2>{text(money(amount, a.currency))}</h2>{text(a.type === 'Credit card' ? <><div className="credit-info"><span>{tr("Credit limit")}</span><b>{text(money(a.limit || 0, a.currency))}</b></div>{text(progress(Math.max(0, -amount), a.limit || 1))}<p>{tr("Available ")}{text(money((a.limit || 0) + Math.min(0, amount), a.currency))}{text(a.due && ` · Due ${date(a.due)}`)}</p><button className="secondary" onClick={() => setModal({ kind: 'transactions', value: { type: 'transfer', to: a.id, name: 'Credit card repayment', category: 'Other' } })}>{tr("Make a repayment ")}<ArrowUpRight size={14}/></button></> : <p><ShieldCheck size={14}/>{tr(" Manually tracked \u00B7 Always in your control")}</p>)}</Swipeable>; })}<button className="add-card" onClick={() => setModal({ kind: 'accounts', ...(view === 'Credit cards' ? { value: { type: 'Credit card' } } : {}) })}><Plus /><h3>{tr("Add an account")}</h3><p>{tr("Give every rupee a home.")}</p></button></div><div className="info-note"><ShieldCheck size={18}/><span>{tr("Accounts are tracked manually. Different currencies are kept separate; no unverified exchange rates are applied.")}</span></div></>}
  {view === 'Budgets & goals' && <>{text(sectionHeader(t.nav[7], 'Make a plan for today. Make room for tomorrow.', 'budgets'))}<div className="section-label"><h2>{tr("Monthly budgets")}</h2><span>{text(new Date(month + '-15').toLocaleDateString(t.locale, { month: 'long', year: 'numeric' }))}</span></div><div className="account-grid">{data.budgets.map((b, i) => { const used = spending.find(x => x.name === (b.category || b.name))?.value || 0; return <Swipeable as="article" className="panel item-card" key={b.id} onEdit={() => setModal({ kind: 'budgets', value: b })} onDelete={() => removeRecord('budgets', b)}><div className="item-top"><RecordIcon record={b} fallback={<Target size={21}/>}/></div><button className="ledger-title" onClick={() => setModal({ kind: 'budgets', value: b })}><h3>{b.name}</h3><ChevronRight size={17}/></button><h2>{text(money(used))} <small>/ {text(money(b.amount))}</small></h2>{text(progress(used, b.amount, used > b.amount ? '#be6d55' : paint.category(b.category || b.name)))}<p>{text(used > b.amount ? 'Over budget by ' + money(used - b.amount) : money(b.amount - used) + ' left to spend')}</p></Swipeable>; })}</div><div className="section-label"><h2>{tr("Savings goals")}</h2><button className="secondary" onClick={() => setModal({ kind: 'goals' })}><Plus size={16}/>{tr("New goal")}</button></div><div className="account-grid">{data.goals.map((g, i) => <Swipeable as="article" className="panel item-card goal-card" key={g.id} onEdit={() => setModal({ kind: 'goals', value: g })} onDelete={() => removeRecord('goals', g)}><div className="item-top">{g.color || g.emoji ? <RecordIcon record={g} fallback={<Target size={21}/>}/> : <span className="goal-emoji">{text(i % 2 === 0 ? '🗻' : '🌱')}</span>}</div><button className="ledger-title" onClick={() => setModal({ kind: 'goals', value: g })}><h3>{g.name}</h3><ChevronRight size={17}/></button><h2>{text(money(g.amount))} <small>/ {text(money(g.target || 0))}</small></h2>{text(progress(g.amount, g.target || 1))}<p>{text(Math.round(g.amount / (g.target || 1) * 100))}{tr("% of the way there")}{text(g.due && ` · ${date(g.due)}`)}</p><button className="secondary" onClick={() => setModal({ kind: 'contribute', value: g })}><Plus size={14}/>{tr("Add savings")}</button></Swipeable>)}</div><p className="muted">{tr("Goal contributions track earmarked savings; they do not create income or move account balances.")}</p></>}
@@ -391,7 +502,17 @@ export default function FinanceApp() {
  {text(notice && <div className="toast" role="status"><CheckCircle2 size={18}/>{text(notice, true)}<button onClick={() => setNotice('')} aria-label={tr("Dismiss")}><X size={15}/></button></div>, true)}
  {text(error && <div className="toast error" role="alert">{text(error, true)}<button onClick={() => load(profile)}>{tr("Retry")}</button></div>, true)}
  {text(saveError && !modal && !error && <div className="toast error" role="alert">{text(saveError, true)}<button onClick={() => setSaveError('')} aria-label={tr("Dismiss")}><X size={15}/></button></div>, true)}
- {text(profileMenu && <ProfileSwitcher profiles={profiles} active={profile} busy={switching} onChoose={switchTo} onEdit={value => { setProfileMenu(false); setModal({ kind: 'profile-edit', value }); }} onCreate={() => { setProfileMenu(false); setModal({ kind: 'profile' }); }} close={() => setProfileMenu(false)} onAccount={() => { setProfileMenu(false); go('Profiles'); }} onSignOut={async () => { setProfileMenu(false); await fetch('/logout', { method: 'POST' }); window.location.assign('/login'); }}/>)}{notifications && <><div className="notifications-backdrop" onClick={() => setNotifications(false)}/><div className="popover notifications notification-center" role="dialog" aria-modal="true" aria-label={tr("Notifications")} style={notifAnchor}><span className="sheet-handle" aria-hidden="true"/><div className="notifications-head"><b>{tr("Notifications")}</b><span className="notifications-head-actions">{notes.length > 0 && <button type="button" className="text-button" onClick={() => keepCleared([...cleared, ...notes.map(noteKey)])}>{tr("Clear all")}</button>}<button type="button" className="text-button" onClick={() => setNotifications(false)}>{tr("Done")}</button></span></div>{notes.length > 0 && <p className="notifications-tip">{tr("Tap to open · swipe left to clear")}</p>}<div className="notification-list">{notes.map(x => <Swipeable key={noteKey(x)} className={'notification-item' + (x.due < localToday ? ' overdue' : x.due === localToday ? ' today' : '')} role="button" tabIndex={0} aria-label={tr('Open {0}', x.name)} deleteLabel="Clear" onClick={() => openNote(x)} onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNote(x); } else if (e.key === 'Delete' || e.key === 'Backspace') keepCleared([...cleared, noteKey(x)]); }} onDelete={() => keepCleared([...cleared, noteKey(x)])}><span><b>{text(tr(x.kind === 'card' ? '{0} payment due' : x.kind === 'goal' ? '{0} goal deadline' : '{0} is due', x.name))}</b><small>{text(dueLabel(x.due))} · {text(date(x.due))}</small></span><strong>{text(x.kind === 'goal' ? tr('{0} still to save', money(x.amount, x.currency)) : money(x.amount, x.currency))}</strong></Swipeable>)}</div>{text(!notes.length && <p className="notifications-empty">{tr("You\u2019re all caught up.")}</p>)}{allNotes.length > notes.length && <button type="button" className="text-button notifications-restore" onClick={() => keepCleared([])}>{tr("Show cleared ({0})", allNotes.length - notes.length)}</button>}</div></>}{text(profileDialog)}{guide === 'welcome' && <WelcomeScreen name={p?.name || me || 'there'} start={() => openGuide(0)} skip={() => leaveGuide('skipped')}/>}{guide === 'tour' && <GuidedTour steps={tourSteps} step={guideStep} setStep={tourTo} navigate={tourNavigate} skip={() => leaveGuide('skipped')} complete={() => { setGuide('complete'); saveGuide(guideWho, { status: 'done', step: 0 }); }}/>}{guide === 'complete' && <CompletionScreen finish={() => { leaveGuide('done'); go('Overview'); }}/>}{text(modal && !['profile', 'profile-edit'].includes(modal.kind) && (modal.kind === 'shared-transaction' ? <SharedTransactionEditor group={modal.value} entry={modal.entry} me={me} currency={currency} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/> : modal.kind === 'shared' ? <SharedGroupEditor value={modal.value} me={me} parties={data.parties} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/> : <Editor modal={modal} me={me} countryName={p?.country || 'India'} profile={profile} data={data} currency={currency} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/>), true)}
+ {text(profileMenu && <ProfileSwitcher profiles={profiles} active={profile} busy={switching} onChoose={switchTo} onEdit={value => { setProfileMenu(false); setModal({ kind: 'profile-edit', value }); }} onCreate={() => { setProfileMenu(false); setModal({ kind: 'profile' }); }} close={() => setProfileMenu(false)} onAccount={() => { setProfileMenu(false); go('Profiles'); }} onSignOut={async () => {
+            setProfileMenu(false);
+            if (localFirst) {
+                const waiting = userId.current ? readOps(userId.current).length : 0;
+                if (waiting && !(await confirmAction(tr('{0} changes have not been uploaded yet. Signing out removes them from this device.', waiting), 'Sign out'))) return;
+            }
+            const res = await fetch('/logout', { method: 'POST' }).catch(() => null);
+            if (localFirst && !res?.ok) { setNotice('Connect to the internet to sign out.'); return; }
+            if (localFirst && userId.current) { callNative('clearLocal', userId.current); clearSnapshot(userId.current); }
+            window.location.assign('/login');
+        }}/>)}{notifications && <><div className="notifications-backdrop" onClick={() => setNotifications(false)}/><div className="popover notifications notification-center" role="dialog" aria-modal="true" aria-label={tr("Notifications")} style={notifAnchor}><span className="sheet-handle" aria-hidden="true"/><div className="notifications-head"><b>{tr("Notifications")}</b><span className="notifications-head-actions">{notes.length > 0 && <button type="button" className="text-button" onClick={() => keepCleared([...cleared, ...notes.map(noteKey)])}>{tr("Clear all")}</button>}<button type="button" className="text-button" onClick={() => setNotifications(false)}>{tr("Done")}</button></span></div>{notes.length > 0 && <p className="notifications-tip">{tr("Tap to open · swipe left to clear")}</p>}<div className="notification-list">{notes.map(x => <Swipeable key={noteKey(x)} className={'notification-item' + (x.due < localToday ? ' overdue' : x.due === localToday ? ' today' : '')} role="button" tabIndex={0} aria-label={tr('Open {0}', x.name)} deleteLabel="Clear" onClick={() => openNote(x)} onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNote(x); } else if (e.key === 'Delete' || e.key === 'Backspace') keepCleared([...cleared, noteKey(x)]); }} onDelete={() => keepCleared([...cleared, noteKey(x)])}><span><b>{text(tr(x.kind === 'card' ? '{0} payment due' : x.kind === 'goal' ? '{0} goal deadline' : '{0} is due', x.name))}</b><small>{text(dueLabel(x.due))} · {text(date(x.due))}</small></span><strong>{text(x.kind === 'goal' ? tr('{0} still to save', money(x.amount, x.currency)) : money(x.amount, x.currency))}</strong></Swipeable>)}</div>{text(!notes.length && <p className="notifications-empty">{tr("You\u2019re all caught up.")}</p>)}{allNotes.length > notes.length && <button type="button" className="text-button notifications-restore" onClick={() => keepCleared([])}>{tr("Show cleared ({0})", allNotes.length - notes.length)}</button>}</div></>}{text(profileDialog)}{guide === 'welcome' && <WelcomeScreen name={p?.name || me || 'there'} start={() => openGuide(0)} skip={() => leaveGuide('skipped')}/>}{guide === 'tour' && <GuidedTour steps={tourSteps} step={guideStep} setStep={tourTo} navigate={tourNavigate} skip={() => leaveGuide('skipped')} complete={() => { setGuide('complete'); saveGuide(guideWho, { status: 'done', step: 0 }); }}/>}{guide === 'complete' && <CompletionScreen finish={() => { leaveGuide('done'); go('Overview'); }}/>}{text(modal && !['profile', 'profile-edit'].includes(modal.kind) && (modal.kind === 'shared-transaction' ? <SharedTransactionEditor group={modal.value} entry={modal.entry} me={me} currency={currency} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/> : modal.kind === 'shared' ? <SharedGroupEditor value={modal.value} me={me} parties={data.parties} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/> : <Editor modal={modal} me={me} countryName={p?.country || 'India'} profile={profile} data={data} currency={currency} busy={busy} serverError={saveError} close={() => setModal(null)} save={mutate} money={money}/>), true)}
  </div>;
 }
 function Editor({ modal, me, profile, data, currency, countryName, busy, serverError, close, save, money }: {

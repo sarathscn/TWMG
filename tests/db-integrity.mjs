@@ -93,6 +93,20 @@ ok('members become debt parties with group links', !(await as(U1, `${rec('pa', P
 e = await as(U1, rec('pa2', P1, 'parties', { name: 'arjun', sharedGroupIds: ['sg'], autoCreated: true }));
 ok('a member is never added twice as a party', /already exists/.test(e || ''), e);
 
+console.log('\nSync clock (history) for offline changes');
+const q1 = async (user, sql) => { await db.exec('begin'); await db.exec(`set local role authenticated; set local request.jwt.claim.sub='${user}'`); const r = await db.query(sql); await db.exec('rollback'); return r.rows; };
+ok('a budget is created', !(await as(U1, rec('bud', P1, 'budgets', { name: 'Food', category: 'Food', amount: 100 }))));
+const base = (await q1(U1, `select max(created) as v from public.history where profile='${P1}'`))[0].v;
+ok('the device sees a version', !!base);
+ok('another device edits the budget', !(await as(U1, upd('bud', { name: 'Food', category: 'Food', amount: 250 }))));
+const later = await q1(U1, `select created from public.history where profile='${P1}' and record='bud' and created > '${new Date(base).toISOString()}'`);
+ok('an edit made after the device version is detected (conflict check)', later.length === 1);
+ok('the budget is deleted', !(await as(U1, `delete from public.records where id='bud'`)));
+const since = await q1(U1, `select distinct record, kind from public.history where profile='${P1}' and created > '${new Date(base).toISOString()}'`);
+const still = await q1(U1, `select id from public.records where id='bud'`);
+ok('change-only download lists the record, and it is gone (a tombstone)', since.some(h => h.record === 'bud' && h.kind === 'budgets') && still.length === 0);
+ok('another user cannot read this profile’s sync clock', (await q1(U2, `select count(*)::int n from public.history where profile='${P1}'`))[0].n === 0);
+
 console.log('\nRow level security');
 const count = async (user, sql) => { await db.exec('begin'); await db.exec(`set local role authenticated; set local request.jwt.claim.sub='${user}'`); const r = await db.query(sql); await db.exec('rollback'); return r.rows[0].n; };
 ok('user 2 sees none of user 1’s records', (await count(U2, `select count(*)::int n from public.records where profile='${P1}'`)) === 0);

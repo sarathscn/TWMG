@@ -224,7 +224,13 @@ npx supabase db push                                # applies supabase/migration
 - **Layout:** edge-to-edge with system-bar, display-cutout and keyboard insets; follows light/dark mode.
 - **Links:** email confirmation and password-reset links (`/auth/…`) open in the app via verified App Links (`public/.well-known/assetlinks.json`). Other sites open in the browser.
 - **Files:** the profile photo picker works, and CSV exports and JSON backups save to **Downloads**.
-- **Offline:** a retry screen appears instead of a broken page.
+- **Offline-first:** the app opens from a copy of your data kept on the device and saves changes there first, so edits and deletes show instantly and work without a connection. Changes wait in a queue (`SyncQueue.kt`, app-private storage, never backed up) that a WorkManager job uploads in order whenever there is a connection, even after the app is closed or the phone restarts. A sync pill in the top bar shows *waiting*, *syncing*, *synced*, *offline* or *sync failed*.
+  - Conflicts: each queued change carries the version the device last saw. If the record was changed elsewhere since then, the server refuses it (HTTP 409) and the app offers **Retry**, **Keep mine** or **Discard** — nothing is overwritten or dropped silently.
+  - Sign-in: the session is the WebView's Supabase cookie in app-private storage (no password is stored). The device copy opens offline only while that session exists and was confirmed online in the last 30 days; an expired or revoked session shows sign-in and clears the device copy (queued changes stay and upload after the same account signs in). Signing out asks before removing unsynced changes. A brand-new install needs a connection once.
+  - The website itself stays online-only; this mode turns on only inside the app.
+- **Version check:** Settings → About shows the installed version and build (read from the installed package), the latest release, and whether an update is available. This section exists only in the app.
+
+**Releasing a new version:** edit `android-release.json` (repo root) — `versionName` and a higher `versionCode`. The Android build reads its version from it, and the website publishes it at `/api/app-version` as the latest release, so deploying the website tells older installs an update is available.
 
 Build (JDK 17 and the Android SDK with platform 35 / build-tools 35 required):
 

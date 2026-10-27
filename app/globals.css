@@ -319,3 +319,15 @@ tr.tx-row{cursor:pointer}tr.tx-row:hover>td{background:var(--soft)}tr.tx-row:foc
 }
 @keyframes twmg-sheet-up{from{transform:translateY(100%)}to{transform:none}}
 @media(prefers-reduced-motion:reduce){.popover.notifications.notification-center,.notifications-backdrop{animation:none}}
+/* Android app: sync status pill and sheet */
+.sync-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer}
+.sync-pill.pending,.sync-pill.syncing{color:var(--accent);border-color:var(--accent)}
+.sync-pill.offline{color:#9a7a3a;border-color:#d8c08a;background:#fbf6ea}
+.sync-pill.failed,.sync-pill.auth{color:var(--danger);border-color:var(--danger-border);background:var(--danger-bg)}
+[data-theme=dark] .sync-pill.offline{background:#3a3323;color:#e5c98b;border-color:#6b5a33}
+.sync-op{cursor:default}.sync-op-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.sync-op-actions button{margin:0;padding:6px 10px;font-size:11px}
+@media(max-width:700px){.sync-pill{padding:5px 8px}.sync-pill.synced span{display:none}.sync-op{flex-direction:column;align-items:stretch}.sync-op-actions{justify-content:flex-start}}
+/* Android app: About page version check */
+.android-version{margin-top:18px}.android-version dl{display:grid;gap:10px;margin:12px 0 0}.android-version dl>div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:10px}
+.android-version dt{color:var(--muted);font-size:12px}.android-version dd{margin:0;font-size:12px;font-weight:600;text-align:end}
+.version-status.update-available{color:var(--danger)}.version-status.up-to-date{color:var(--accent)}

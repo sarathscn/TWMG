@@ -13,7 +13,20 @@ type AndroidBridge = {
     remindersEnabled(): boolean;
     setRemindersEnabled(enabled: boolean): void;
     syncReminders(lang: string): void;
+    // Offline change queue (SyncQueue.kt) and installed version.
+    queueAdd(op: string): boolean;
+    queueList(user: string): string;
+    queueDiscard(opId: string): void;
+    queueRetry(opId: string, keepMine: boolean): void;
+    syncNow(): void;
+    syncStatus(): string;
+    setSyncUser(user: string): void;
+    clearLocal(user: string): void;
+    hasSession(): boolean;
+    appVersion(): string;
 };
+// True only inside the TWMG Android app build that has the offline queue.
+export const isAndroidApp = () => typeof bridge()?.queueAdd === 'function';
 const bridge = () => (typeof window !== 'undefined' ? (window as unknown as { TWMGAndroid?: Partial<AndroidBridge> }).TWMGAndroid : undefined);
 // Calls a native method without ever letting a native failure break the page: a Java exception
 // surfaces in WebView as a thrown JS error, which would otherwise take down the whole screen.

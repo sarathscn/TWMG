@@ -95,6 +95,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
         Reminders.createChannel(this)
+        // Offline changes: show upload progress in the page, and finish anything left from last time.
+        SyncBus.listener = { status -> notifyWebJson("sync", status.toString()) }
+        if (SyncQueue.activeUser(this) != null) SyncQueue.schedule(this)
         if (Reminders.enabled(this)) Reminders.schedule(this)
         val root = FrameLayout(this)
         web = WebView(this).apply { setBackgroundColor(Color.TRANSPARENT) }
@@ -133,7 +136,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() { super.onResume(); web.onResume() }
-    override fun onPause() { web.onPause(); super.onPause() }
+    // Keep the sign-in session on disk so the app can reopen with it (and offline).
+    override fun onPause() { web.onPause(); CookieManager.getInstance().flush(); super.onPause() }
 
     override fun onStop() {
         backgroundedAt = SystemClock.elapsedRealtime()
@@ -147,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        SyncBus.listener = null
         web.destroy()
         super.onDestroy()
     }
@@ -269,6 +274,10 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',enabled:$enabled}}))", null) }
     }
 
+    private fun notifyWebJson(type: String, json: String) {
+        runOnUiThread { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',data:$json}}))", null) }
+    }
+
     private fun openExternally(uri: Uri) {
         try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (e: ActivityNotFoundException) { Toast.makeText(this, R.string.no_app_for_link, Toast.LENGTH_SHORT).show() }
     }
@@ -308,6 +317,26 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) { notifyWeb("appLock", isLockOn()) }
             }
+        }
+
+        // ---- Offline changes (see SyncQueue) ----
+        @JavascriptInterface fun queueAdd(op: String): Boolean = safe(false) { SyncQueue.add(this@MainActivity, op).also { if (it) SyncQueue.schedule(this@MainActivity) } }
+        @JavascriptInterface fun queueList(user: String): String = safe("[]") { SyncQueue.list(this@MainActivity, user).toString() }
+        @JavascriptInterface fun queueDiscard(opId: String) = safe(Unit) { SyncQueue.remove(this@MainActivity, opId); SyncQueue.schedule(this@MainActivity) }
+        @JavascriptInterface fun queueRetry(opId: String, keepMine: Boolean) = safe(Unit) { SyncQueue.retry(this@MainActivity, opId, keepMine); SyncQueue.schedule(this@MainActivity) }
+        @JavascriptInterface fun syncNow() = safe(Unit) { SyncQueue.schedule(this@MainActivity) }
+        @JavascriptInterface fun syncStatus(): String = safe("{}") { SyncQueue.status(this@MainActivity).toString() }
+        /** Called after the server confirmed who is signed in; only that account's changes are uploaded. */
+        @JavascriptInterface fun setSyncUser(user: String) = safe(Unit) { if (user.isNotBlank()) { SyncQueue.setActiveUser(this@MainActivity, user); SyncQueue.schedule(this@MainActivity) } }
+        /** Sign-out: forget this account's queued changes on this device. */
+        @JavascriptInterface fun clearLocal(user: String) = safe(Unit) { SyncQueue.clearUser(this@MainActivity, user) }
+        /** Whether the device still holds a sign-in session cookie (it is removed on sign-out). */
+        @JavascriptInterface fun hasSession(): Boolean = safe(false) { CookieManager.getInstance().getCookie(BuildConfig.APP_URL)?.split(';')?.any { it.trim().substringBefore('=').contains("-auth-token") } == true }
+        /** The installed app version, straight from the package (set by android-release.json at build time). */
+        @JavascriptInterface fun appVersion(): String = safe("{}") {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+            org.json.JSONObject().put("versionName", info.versionName ?: "").put("versionCode", code).toString()
         }
 
         @JavascriptInterface fun remindersEnabled(): Boolean = safe(false) { Reminders.enabled(this@MainActivity) && notificationsAllowed() }

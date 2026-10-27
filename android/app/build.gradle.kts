@@ -10,6 +10,11 @@ plugins {
 val signingFile = File(System.getenv("TWMG_KEYSTORE_PROPERTIES") ?: "${System.getProperty("user.home")}/.twmg-signing/keystore.properties")
 val signing = Properties().apply { if (signingFile.exists()) signingFile.inputStream().use { load(it) } }
 
+// One version for the app and the website: android-release.json (repo root) is read here for the build and
+// served by /api/app-version as the latest release, so the About page can compare the two.
+@Suppress("UNCHECKED_CAST")
+val release = groovy.json.JsonSlurper().parse(rootProject.file("../android-release.json")) as Map<String, Any>
+
 android {
     namespace = "com.sarathscn.twmg"
     compileSdk = 35
@@ -18,8 +23,8 @@ android {
         applicationId = "com.sarathscn.twmg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "1.7.4"
+        versionCode = (release["versionCode"] as Number).toInt()
+        versionName = release["versionName"] as String
         buildConfigField("String", "APP_URL", "\"https://twmg.vercel.app\"")
     }
 
