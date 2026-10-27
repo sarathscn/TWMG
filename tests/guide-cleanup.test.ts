@@ -64,3 +64,14 @@ test('Phones get a bottom-sheet notification centre above the navigation, and fo
  assert.match(app,/\[filtersOpen, setFiltersOpen\] = useState\(\(\) => typeof window === 'undefined' \|\| window\.innerWidth > 700\)/,'filters start folded on phones');
  assert.match(app,/\{filtersOpen && <div className="filter-selects"/);
 });
+test('Amounts stay on one line and fit their cards; the Available balance keeps its own style',()=>{
+ const css=readFileSync('app/globals.css','utf8'),app=ui['FinanceApp.tsx'];
+ assert.match(css,/\.fit-amount\{display:block;white-space:nowrap/,'amounts never wrap mid-number');
+ assert.match(css,/@container \(max-width:250px\)\{\.fit-amount\.fit-full\{display:none\}/,'narrow cards switch to the short form');
+ assert.match(app,/<h2>\{cardMoney\(net \+ debtNet\)\}<\/h2>/);
+ assert.match(app,/<strong>\{fitMoney\(sum\.expense\)\}<\/strong>/,'the donut centre fits its hole');
+ assert.match(app,/tickFormatter=\{v => compactNumber\(Number\(v\)\)\}/,'chart axis labels are short');
+ assert.match(app,/c !== 'INR' && t\.locale === 'en-IN' \? 'en-GB' : t\.locale/,'lakh grouping is used for rupees only');
+ assert.ok(!/available-balance' \+ \(available <= 0 \? ' empty'/.test(app),'"empty" collided with the empty-state style');
+ assert.match(css,/\.cashflow-values strong span:not\(\.fit-amount\)\{/,'the arrow badge style no longer squeezes the amount');
+});

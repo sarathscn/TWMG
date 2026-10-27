@@ -897,5 +897,7 @@
   "App info": "ആപ്പ് വിവരം",
   "Price": "വില",
   "Free, no subscriptions": "സൗജന്യം, സബ്സ്ക്രിപ്ഷനില്ല",
-  "Your profile is still loading. Try again in a moment.": "നിങ്ങളുടെ പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു. അൽപ്പസമയത്തിനകം വീണ്ടും ശ്രമിക്കുക."
+  "Your profile is still loading. Try again in a moment.": "നിങ്ങളുടെ പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു. അൽപ്പസമയത്തിനകം വീണ്ടും ശ്രമിക്കുക.",
+  "{0} transaction": "{0} ഇടപാട്",
+  "{0} transactions": "{0} ഇടപാടുകൾ"
 }

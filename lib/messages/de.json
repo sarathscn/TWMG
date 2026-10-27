@@ -897,5 +897,7 @@
   "App info": "App-Info",
   "Price": "Preis",
   "Free, no subscriptions": "Kostenlos, ohne Abo",
-  "Your profile is still loading. Try again in a moment.": "Dein Profil wird noch geladen. Versuche es gleich noch einmal."
+  "Your profile is still loading. Try again in a moment.": "Dein Profil wird noch geladen. Versuche es gleich noch einmal.",
+  "{0} transaction": "{0} Buchung",
+  "{0} transactions": "{0} Buchungen"
 }

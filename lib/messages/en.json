@@ -897,5 +897,7 @@
   "App info": "App info",
   "Price": "Price",
   "Free, no subscriptions": "Free, no subscriptions",
-  "Your profile is still loading. Try again in a moment.": "Your profile is still loading. Try again in a moment."
+  "Your profile is still loading. Try again in a moment.": "Your profile is still loading. Try again in a moment.",
+  "{0} transaction": "{0} transaction",
+  "{0} transactions": "{0} transactions"
 }

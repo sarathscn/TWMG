@@ -897,5 +897,7 @@
   "App info": "ऐप जानकारी",
   "Price": "कीमत",
   "Free, no subscriptions": "मुफ़्त, कोई सदस्यता नहीं",
-  "Your profile is still loading. Try again in a moment.": "आपकी प्रोफ़ाइल अभी लोड हो रही है। थोड़ी देर में फिर कोशिश करें।"
+  "Your profile is still loading. Try again in a moment.": "आपकी प्रोफ़ाइल अभी लोड हो रही है। थोड़ी देर में फिर कोशिश करें।",
+  "{0} transaction": "{0} लेन-देन",
+  "{0} transactions": "{0} लेन-देन"
 }

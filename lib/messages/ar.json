@@ -897,5 +897,7 @@
   "App info": "معلومات التطبيق",
   "Price": "السعر",
   "Free, no subscriptions": "مجاني، بلا اشتراكات",
-  "Your profile is still loading. Try again in a moment.": "ملفك الشخصي ما زال قيد التحميل. حاول بعد لحظة."
+  "Your profile is still loading. Try again in a moment.": "ملفك الشخصي ما زال قيد التحميل. حاول بعد لحظة.",
+  "{0} transaction": "{0} معاملة",
+  "{0} transactions": "{0} معاملات"
 }
