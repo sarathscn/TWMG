@@ -893,5 +893,9 @@
   "You are offline. This needs an internet connection.": "You are offline. This needs an internet connection.",
   "Connect to the internet to sign out.": "Connect to the internet to sign out.",
   "Could not save on this device. Please try again.": "Could not save on this device. Please try again.",
-  "Remove the linked transactions first.": "Remove the linked transactions first."
+  "Remove the linked transactions first.": "Remove the linked transactions first.",
+  "App info": "App info",
+  "Price": "Price",
+  "Free, no subscriptions": "Free, no subscriptions",
+  "Your profile is still loading. Try again in a moment.": "Your profile is still loading. Try again in a moment."
 }

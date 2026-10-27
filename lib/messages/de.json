@@ -893,5 +893,9 @@
   "You are offline. This needs an internet connection.": "Du bist offline. Dafür ist eine Internetverbindung nötig.",
   "Connect to the internet to sign out.": "Verbinde dich mit dem Internet, um dich abzumelden.",
   "Could not save on this device. Please try again.": "Konnte auf diesem Gerät nicht gespeichert werden. Bitte erneut versuchen.",
-  "Remove the linked transactions first.": "Entferne zuerst die verknüpften Buchungen."
+  "Remove the linked transactions first.": "Entferne zuerst die verknüpften Buchungen.",
+  "App info": "App-Info",
+  "Price": "Preis",
+  "Free, no subscriptions": "Kostenlos, ohne Abo",
+  "Your profile is still loading. Try again in a moment.": "Dein Profil wird noch geladen. Versuche es gleich noch einmal."
 }

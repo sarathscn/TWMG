@@ -893,5 +893,9 @@
   "You are offline. This needs an internet connection.": "أنت غير متصل. يتطلب هذا اتصالًا بالإنترنت.",
   "Connect to the internet to sign out.": "اتصل بالإنترنت لتسجيل الخروج.",
   "Could not save on this device. Please try again.": "تعذّر الحفظ على هذا الجهاز. حاول مرة أخرى.",
-  "Remove the linked transactions first.": "أزل المعاملات المرتبطة أولًا."
+  "Remove the linked transactions first.": "أزل المعاملات المرتبطة أولًا.",
+  "App info": "معلومات التطبيق",
+  "Price": "السعر",
+  "Free, no subscriptions": "مجاني، بلا اشتراكات",
+  "Your profile is still loading. Try again in a moment.": "ملفك الشخصي ما زال قيد التحميل. حاول بعد لحظة."
 }

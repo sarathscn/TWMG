@@ -38,3 +38,14 @@ export function readSnapshot(user:string):Snapshot|null{try{const v=JSON.parse(l
 export function writeSnapshot(s:Snapshot){try{localStorage.setItem(key(s.user.id),JSON.stringify(s));localStorage.setItem('twmg-last-user',s.user.id)}catch{/* storage full or blocked: the app still works online */}}
 export function clearSnapshot(user:string){try{localStorage.removeItem(key(user));if(localStorage.getItem('twmg-last-user')===user)localStorage.removeItem('twmg-last-user')}catch{/* nothing stored */}}
 export const lastUser=()=>{try{return localStorage.getItem('twmg-last-user')||''}catch{return ''}};
+// Several downloads can be in flight at once (a background refresh after an upload, returning to
+// the app, reconnecting, switching profile). A result is used only if no newer one was applied and
+// it is for the profile the user is on now; change-only results merge only into that same profile's
+// data. Anything else is dropped, or fetched in full, so a late reply can never switch profile or
+// mix two profiles' records.
+export function loadDecision(r:{seq:number;appliedSeq:number;wanted:string;got:string;incremental:boolean;baseProfile:string}):'apply'|'stale'|'full'{
+ if(r.seq<r.appliedSeq)return 'stale';
+ if(r.wanted&&r.got!==r.wanted)return 'stale';
+ if(r.incremental&&r.got!==r.baseProfile)return 'full';
+ return 'apply';
+}

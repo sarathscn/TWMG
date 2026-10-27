@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {compareVersions,parseVersion,updateStatus,readAppVersion} from '../lib/version.ts';
-import {applyOps,applyChanges,sinceFor,offlineAllowed,type SyncOp} from '../lib/offline-sync.ts';
+import {applyOps,applyChanges,sinceFor,offlineAllowed,loadDecision,type SyncOp} from '../lib/offline-sync.ts';
 import type {Data} from '../lib/finance.ts';
 
 test('Versions compare as numbers, never as text',()=>{
@@ -86,4 +86,21 @@ test('The Android stand-in used for testing ships only in development builds',()
  assert.match(app,/if \(process\.env\.NODE_ENV === 'production'\) navigator\.serviceWorker\?\.register\('\/sw\.js'\)/,'the offline shell registers only in production, only in the Android app');
  const sw=readFileSync('public/sw.js','utf8');
  assert.ok(sw.includes("const NEVER = [/^\\/api\\//"),'finance API responses are never cached by the service worker');
+});
+test('A late download can never switch profile or mix two profiles',()=>{
+ const base={seq:5,appliedSeq:4,wanted:'B',got:'B',incremental:false,baseProfile:'A'};
+ assert.equal(loadDecision(base),'apply','the newest download for the profile on screen is used');
+ assert.equal(loadDecision({...base,got:'A'}),'stale','a background refresh of the old profile, finishing after a switch, is dropped');
+ assert.equal(loadDecision({...base,seq:3}),'stale','an older download finishing late is dropped');
+ assert.equal(loadDecision({...base,incremental:true}),'full','changes for B are never merged into A’s records');
+ assert.equal(loadDecision({...base,incremental:true,baseProfile:'B'}),'apply');
+ assert.equal(loadDecision({...base,wanted:''}),'apply','first launch accepts the server’s profile');
+ const app=readFileSync('app/ui/FinanceApp.tsx','utf8');
+ assert.match(app,/profile: serverProfile\.current, kind, action/,'a saved change belongs to the profile whose data is on screen');
+ assert.match(app,/async function switchTo\(id: string\) \{\n\s*wantProfile\.current = id;/);
+});
+test('About shows no version on the website; the Android check sits in its side column',()=>{
+ const app=readFileSync('app/ui/FinanceApp.tsx','utf8');
+ assert.ok(!/appVersion|packageJson/.test(app),'the web package version is not shown');
+ assert.match(app,/<aside className="about-side">.*\{localFirst && <AndroidVersionPanel\/>\}<\/aside>/);
 });

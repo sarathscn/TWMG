@@ -331,3 +331,20 @@ tr.tx-row{cursor:pointer}tr.tx-row:hover>td{background:var(--soft)}tr.tx-row:foc
 .android-version{margin-top:18px}.android-version dl{display:grid;gap:10px;margin:12px 0 0}.android-version dl>div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:10px}
 .android-version dt{color:var(--muted);font-size:12px}.android-version dd{margin:0;font-size:12px;font-weight:600;text-align:end}
 .version-status.update-available{color:var(--danger)}.version-status.up-to-date{color:var(--accent)}
+/* About: the story beside an app-info column (the version check joins it in the Android app) */
+.about-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:22px;align-items:start}
+.about-layout .about-panel{width:auto;max-width:none;margin:0;padding:30px 34px}
+.about-layout .about-panel>h2{font-size:26px;margin:16px 0 6px}
+.about-layout .about-panel>h3{font-size:16px;margin:28px 0 8px;color:var(--text)}
+.about-layout .about-panel>p{font-size:13.5px;line-height:1.7;color:var(--text);opacity:.78;max-width:68ch}
+.about-layout .about-panel>p:first-of-type{font-size:15px;opacity:.9}
+.about-layout .about-support{margin:20px 0 8px;padding:12px 20px;font-size:13px}
+.about-side{display:grid;gap:18px;position:sticky;top:20px}
+.about-info{padding:22px 24px}.about-info h3,.android-version h3{font-size:15px;margin:0 0 4px}
+.about-info dl,.android-version dl{display:grid;gap:0;margin:10px 0 14px}
+.about-info dl>div,.android-version dl>div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:11px 0;border-top:1px solid var(--line)}
+.about-info dt,.android-version dt{color:var(--muted);font-size:12px}.about-info dd,.android-version dd{margin:0;font-size:12.5px;font-weight:600;text-align:end;overflow-wrap:anywhere}
+.about-info .secondary{margin:4px 0 0;width:100%;min-height:40px}
+.about-side .android-version{margin:0;padding:22px 24px}
+@media(max-width:1100px){.about-layout{grid-template-columns:minmax(0,1fr)}.about-side{position:static;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
+@media(max-width:700px){.about-layout .about-panel{padding:22px 18px}.about-layout .about-panel>h2{font-size:22px}.about-layout .about-panel>p{font-size:13px}.about-side{grid-template-columns:minmax(0,1fr)}.about-info,.about-side .android-version{padding:18px}}
