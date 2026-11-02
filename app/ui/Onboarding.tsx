@@ -72,7 +72,7 @@ export function GuidedTour({ steps, step, setStep, navigate, skip, complete }: {
         if (!current) return;
         if (current.view) navigate(current.view);
         // A section taller than the screen starts just below the docked card instead of under it.
-        const t = setTimeout(() => { const el = find(current.target); if (el) { const tall = el.getBoundingClientRect().height > window.innerHeight * 0.55; el.style.scrollMarginTop = tall ? '200px' : ''; el.scrollIntoView({ block: tall ? 'start' : 'center', behavior: 'smooth' }); } title.current?.focus({ preventScroll: true }); }, 250);
+        const t = setTimeout(() => { const el = find(current.target); if (el) { const tall = el.getBoundingClientRect().height > window.innerHeight * 0.55; el.style.scrollMarginTop = tall ? '200px' : ''; el.scrollIntoView({ block: tall ? 'start' : 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } title.current?.focus({ preventScroll: true }); }, 250);
         return () => clearTimeout(t);
     }, [step]);
     // Follow the highlighted control as the page scrolls, resizes or re-renders, and watch for

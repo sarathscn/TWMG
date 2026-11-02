@@ -899,5 +899,15 @@
   "Free, no subscriptions": "مجاني، بلا اشتراكات",
   "Your profile is still loading. Try again in a moment.": "ملفك الشخصي ما زال قيد التحميل. حاول بعد لحظة.",
   "{0} transaction": "{0} معاملة",
-  "{0} transactions": "{0} معاملات"
+  "{0} transactions": "{0} معاملات",
+  "Emerald": "زمردي",
+  "Ocean": "محيطي",
+  "Plum": "برقوقي",
+  "Terracotta": "تراكوتا",
+  "Slate": "أردوازي",
+  "Rose": "وردي",
+  "Teal": "أزرق مخضر",
+  "Mustard": "خردلي",
+  "Olive": "زيتوني",
+  "Brick": "قرميدي"
 }

@@ -899,5 +899,15 @@
   "Free, no subscriptions": "Free, no subscriptions",
   "Your profile is still loading. Try again in a moment.": "Your profile is still loading. Try again in a moment.",
   "{0} transaction": "{0} transaction",
-  "{0} transactions": "{0} transactions"
+  "{0} transactions": "{0} transactions",
+  "Emerald": "Emerald",
+  "Ocean": "Ocean",
+  "Plum": "Plum",
+  "Terracotta": "Terracotta",
+  "Slate": "Slate",
+  "Rose": "Rose",
+  "Teal": "Teal",
+  "Mustard": "Mustard",
+  "Olive": "Olive",
+  "Brick": "Brick"
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CloudOff, RefreshCw, CheckCircle2, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { useI18n } from './UIProvider';
 import { callNative } from './DeviceSecurity';
@@ -17,12 +18,12 @@ export function SyncIndicator({ status, online, ops, retry, discard }: { status:
     const label = { failed: tr('Sync failed'), auth: tr('Sign in to sync'), offline: pending ? tr('Offline · {0} waiting', pending) : tr('Offline'), syncing: tr('Syncing…'), pending: tr('{0} waiting to sync', pending), synced: tr('Synced') }[mode];
     const Icon = mode === 'failed' || mode === 'auth' ? AlertTriangle : mode === 'offline' ? CloudOff : mode === 'syncing' ? LoaderCircle : mode === 'pending' ? RefreshCw : CheckCircle2;
     return <><button type="button" className={'sync-pill ' + mode} aria-label={label} title={label} onClick={() => { setOpen(true); callNative('syncNow'); }}><Icon size={14} className={mode === 'syncing' ? 'spin' : ''}/><span>{label}</span></button>
-        {open && <><div className="notifications-backdrop" onClick={() => setOpen(false)}/><div className="popover notifications notification-center sync-center" role="dialog" aria-modal="true" aria-label={tr('Sync status')}><span className="sheet-handle" aria-hidden="true"/>
+        {open && createPortal(<><div className="notifications-backdrop" onClick={() => setOpen(false)}/><div className="popover notifications notification-center sync-center" role="dialog" aria-modal="true" aria-label={tr('Sync status')}><span className="sheet-handle" aria-hidden="true"/>
             <div className="notifications-head"><b>{tr('Sync status')}</b><span className="notifications-head-actions"><button type="button" className="text-button" onClick={() => setOpen(false)}>{tr('Done')}</button></span></div>
             <p className="notifications-tip">{text(mode === 'synced' ? tr('Everything on this device is saved online.') : mode === 'offline' ? tr('You are offline. Changes are kept on this device and upload automatically when you reconnect.') : mode === 'auth' ? tr('Your session ended. Sign in again and your waiting changes will upload.') : mode === 'failed' ? tr('The server could not save a change. Nothing was lost: retry it, or discard it to keep the online version.') : tr('Changes are saved on this device and uploading in the background.'))}{status.lastSync ? ' ' + tr('Last synced {0}.', new Date(status.lastSync).toLocaleString()) : ''}</p>
             <div className="notification-list">{ops.map(op => <div key={op.opId} className={'notification-item sync-op' + (op.state === 'failed' ? ' overdue' : '')}><span><b>{text(tr(op.action === 'delete' ? 'Delete {0}' : 'Save {0}', String(op.value?.name || op.kind)))}</b><small>{text(op.state === 'failed' ? (op.error || tr('Sync failed')) : tr('Waiting to sync'))}</small></span>{op.state === 'failed' && <span className="sync-op-actions"><button type="button" className="secondary" onClick={() => retry(op, false)}>{tr('Retry')}</button>{op.conflict && <button type="button" className="secondary" onClick={() => retry(op, true)}>{tr('Keep mine')}</button>}<button type="button" className="text-danger" onClick={() => discard(op)}>{tr('Discard')}</button></span>}</div>)}</div>
             {!ops.length && <p className="notifications-empty">{tr('No changes waiting.')}</p>}
-        </div></>}</>;
+        </div></>, document.body)}</>;
 }
 
 const cacheKey = 'twmg-latest-android';

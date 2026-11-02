@@ -2,8 +2,10 @@
 // Android bridge and the finance API, so the app's local-first mode can be exercised in a desktop
 // browser. Turn it on with localStorage 'twmg-dev-android' = '1'. Control it from the console:
 //   __stub.online(false)  simulate no connection      __stub.flush()  run the upload queue
+//   localStorage 'stub-reduced' = '1'  report prefers-reduced-motion to scripts (read at load)
 //   __stub.server()       the fake server's records   __stub.conflict(id)  next upload of id conflicts
 export const devAndroidStub = `(function(){try{if(localStorage.getItem('twmg-dev-android')!=='1')return;}catch(e){return;}
+if(localStorage.getItem('stub-reduced')==='1'){var mm=window.matchMedia.bind(window);window.matchMedia=function(q){return /reduced-motion/.test(q)?{matches:true,media:q,addEventListener:function(){},removeEventListener:function(){}}:mm(q)}}
 var Q='stub-queue',S='stub-server',ls=localStorage,get=function(k,d){try{return JSON.parse(ls.getItem(k))||d}catch(e){return d}},set=function(k,v){ls.setItem(k,JSON.stringify(v))};
 var online=ls.getItem('stub-offline')!=='1',state='idle',conflicts={},clock=Date.now();
 function now(){clock=Math.max(clock+1,Date.now());return new Date(clock).toISOString()}

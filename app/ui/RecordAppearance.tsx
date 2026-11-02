@@ -31,8 +31,11 @@ function hsvToHex(h: number, s: number, v: number) {
     const f = (k: number) => { const x = (k + h / 60) % 6; return v - v * s * Math.max(0, Math.min(x, 4 - x, 1)); };
     return '#' + [f(5), f(3), f(1)].map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
 }
-// Themed colour chooser used everywhere: preset swatches plus a full custom picker
-// (colour area, hue slider, hex code). Drawn by the app, so it follows light/dark mode.
+// A small colour mark for lists and dropdowns, in one shape everywhere.
+export const ColorDot = ({ color }: { color: string }) => <i className="color-dot" style={{ background: color }} aria-hidden="true"/>;
+// Themed colour chooser used everywhere: a grid of named colour tiles plus a full custom picker
+// (colour area, hue slider, hex code). The tiles are a radio group: Tab reaches the chosen colour
+// and the arrow keys move between them. Selection shows a tick and a ring, not only the colour.
 export function ColorPicker({ value, onChange, legend, presets = recordColors }: {
     value?: string;
     onChange: (color: string) => void;
@@ -45,7 +48,18 @@ export function ColorPicker({ value, onChange, legend, presets = recordColors }:
     const [open, setOpen] = useState(false);
     const [hsv, setHsv] = useState(() => hexToHsv(current || presets[0]));
     const [draft, setDraft] = useState(current || presets[0]);
-    const area = useRef<HTMLDivElement>(null);
+    const area = useRef<HTMLDivElement>(null), tiles = useRef<HTMLDivElement>(null);
+    const colorName = (c: string) => recordColorNames[c] ? tr(recordColorNames[c]) : c;
+    function choose(c: string) { onChange(c); setHsv(hexToHsv(c)); setDraft(c); }
+    function moveWithKeys(e: React.KeyboardEvent, index: number) {
+        const rtl = getComputedStyle(e.currentTarget).direction === 'rtl';
+        const step = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        const next = (index + step + presets.length) % presets.length;
+        choose(presets[next]);
+        tiles.current?.querySelectorAll<HTMLElement>('[role=radio]')[next]?.focus();
+    }
     useEffect(() => { if (current && current !== hsvToHex(hsv.h, hsv.s, hsv.v)) { setHsv(hexToHsv(current)); setDraft(current); } }, [current]);
     function apply(next: { h: number; s: number; v: number }) { setHsv(next); const hex = hsvToHex(next.h, next.s, next.v); setDraft(hex); onChange(hex); }
     function pick(e: ReactPointerEvent<HTMLDivElement>) {
@@ -59,9 +73,12 @@ export function ColorPicker({ value, onChange, legend, presets = recordColors }:
         e.preventDefault();
         apply({ h: hsv.h, s: Math.min(1, Math.max(0, hsv.s + (k === 'ArrowRight' ? step : k === 'ArrowLeft' ? -step : 0))), v: Math.min(1, Math.max(0, hsv.v + (k === 'ArrowUp' ? step : k === 'ArrowDown' ? -step : 0))) });
     }
-    return <fieldset className="card-color-picker color-picker"><legend>{text(legend)}</legend>
-        {text(presets.map(c => <button type="button" key={c} aria-label={tr('Choose ' + (recordColorNames[c] || c))} aria-pressed={current === c} style={{ background: c, color: readableOn(c) }} onClick={() => { onChange(c); setHsv(hexToHsv(c)); setDraft(c); }}>{text(current === c && <Check size={17}/>)}</button>))}
-        <button type="button" className={'custom-swatch' + (custom ? ' is-custom' : '')} aria-label={tr('Custom color')} aria-expanded={open} aria-pressed={custom} style={custom ? { background: current, color: readableOn(current) } : undefined} onClick={() => setOpen(!open)}>{custom ? <Check size={17}/> : <Pipette size={15}/>}</button>
+    const tabStop = presets.includes(current) ? current : presets[0];
+    return <fieldset className="color-picker"><legend>{text(legend)}{current && <span className="color-current"> · {custom ? current : colorName(current)}</span>}</legend>
+        <div className="color-tiles" ref={tiles}>
+            <div role="radiogroup" aria-label={text(legend) as string} className="color-group">{presets.map((c, i) => <button type="button" role="radio" key={c} className="color-tile" aria-checked={current === c} tabIndex={c === tabStop ? 0 : -1} aria-label={colorName(c)} onClick={() => choose(c)} onKeyDown={e => moveWithKeys(e, i)}><span className="color-chip" style={{ background: c, color: readableOn(c) }}>{current === c && <Check size={18} strokeWidth={3}/>}</span><span className="color-name" aria-hidden="true">{colorName(c)}</span></button>)}</div>
+            <button type="button" className={'color-tile custom-tile' + (custom ? ' is-custom' : '')} aria-label={tr('Custom color')} aria-expanded={open} aria-pressed={custom} onClick={() => setOpen(!open)}><span className="color-chip" style={custom ? { background: current, color: readableOn(current) } : undefined}>{custom ? <Check size={18} strokeWidth={3}/> : <Pipette size={16}/>}</span><span className="color-name" aria-hidden="true">{tr('Custom')}</span></button>
+        </div>
         {open && <div className="color-custom">
             <div ref={area} className="color-area" role="slider" tabIndex={0} aria-label={tr('Saturation and brightness')} aria-valuetext={draft} style={{ background: `linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,${hsvToHex(hsv.h, 1, 1)})` }} onKeyDown={nudge} onPointerDown={e => { try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* pointer already released */ } pick(e); }} onPointerMove={e => { if (e.buttons) pick(e); }}><span className="color-thumb" style={{ left: hsv.s * 100 + '%', top: (1 - hsv.v) * 100 + '%', background: draft }}/></div>
             <label className="color-hue">{tr("Hue")}<input type="range" min={0} max={359} value={Math.round(hsv.h)} onChange={e => apply({ ...hsv, h: Number(e.target.value), s: hsv.s || 1, v: hsv.v || 1 })}/></label>
@@ -91,7 +108,7 @@ function EmojiSheet({ selected, close, choose }: { selected: string; close: () =
     useEffect(() => { const previous = document.activeElement as HTMLElement | null; search.current?.focus({ preventScroll: true }); return () => previous?.focus({ preventScroll: true }); }, []);
     const q = query.trim().toLowerCase();
     const groups = emojiCatalog.map(c => ({ category: c.category, emojis: q ? c.emojis.filter(([e, words]) => words.includes(q) || e === q || tr(c.category).toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) : c.emojis })).filter(g => g.emojis.length);
-    const jump = (category: string) => body.current?.querySelector<HTMLElement>('[data-category="' + category + '"]')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const jump = (category: string) => body.current?.querySelector<HTMLElement>('[data-category="' + category + '"]')?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     if (typeof document === 'undefined') return null;
     return createPortal(<div className="emoji-sheet-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) close(); }}>
         <div className="emoji-sheet" role="dialog" aria-modal="true" aria-labelledby="emoji-sheet-title" onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }}>

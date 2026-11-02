@@ -899,5 +899,15 @@
   "Free, no subscriptions": "സൗജന്യം, സബ്സ്ക്രിപ്ഷനില്ല",
   "Your profile is still loading. Try again in a moment.": "നിങ്ങളുടെ പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു. അൽപ്പസമയത്തിനകം വീണ്ടും ശ്രമിക്കുക.",
   "{0} transaction": "{0} ഇടപാട്",
-  "{0} transactions": "{0} ഇടപാടുകൾ"
+  "{0} transactions": "{0} ഇടപാടുകൾ",
+  "Emerald": "മരതകം",
+  "Ocean": "സമുദ്രം",
+  "Plum": "പ്ലം",
+  "Terracotta": "ടെറാക്കോട്ട",
+  "Slate": "സ്ലേറ്റ്",
+  "Rose": "റോസ്",
+  "Teal": "ടീൽ",
+  "Mustard": "കടുക്",
+  "Olive": "ഒലിവ്",
+  "Brick": "ഇഷ്ടിക"
 }

@@ -899,5 +899,15 @@
   "Free, no subscriptions": "मुफ़्त, कोई सदस्यता नहीं",
   "Your profile is still loading. Try again in a moment.": "आपकी प्रोफ़ाइल अभी लोड हो रही है। थोड़ी देर में फिर कोशिश करें।",
   "{0} transaction": "{0} लेन-देन",
-  "{0} transactions": "{0} लेन-देन"
+  "{0} transactions": "{0} लेन-देन",
+  "Emerald": "पन्ना",
+  "Ocean": "सागर",
+  "Plum": "आलूबुखारा",
+  "Terracotta": "टेराकोटा",
+  "Slate": "स्लेट",
+  "Rose": "गुलाबी",
+  "Teal": "टील",
+  "Mustard": "सरसों",
+  "Olive": "जैतून",
+  "Brick": "ईंट"
 }
