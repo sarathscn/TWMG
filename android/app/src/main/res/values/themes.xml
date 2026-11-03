@@ -9,4 +9,11 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+    <!-- Shown by the system before the app's first frame; hands over to StartupView. -->
+    <style name="Theme.TWMG.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand</item>
+        <item name="postSplashScreenTheme">@style/Theme.TWMG</item>
+    </style>
 </resources>

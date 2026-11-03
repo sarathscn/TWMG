@@ -2,6 +2,7 @@ import {validateLinks} from '../../../lib/transaction-links';
 import {sameOrigin} from '../../../lib/request-origin';
 import {createClient} from '../../../lib/supabase/server';
 import {validateTransaction,overdrawn,cashLikeTypes,isCashMethod,categoryRenameUpdates,groupMembers,removedMembers,withoutMembers,partySyncPlan,type Account,type Item,type Party,type Transaction,categories as defaultCategories} from '../../../lib/finance';
+import {ServiceError,databaseFailure,fetchAll,isAuthOutage} from '../../../lib/api-errors';
 import {z} from 'zod';
 import {countryForCurrency} from '../../../lib/countries';
 import {recordColors} from '../../../lib/card-options';
@@ -15,10 +16,10 @@ const money=z.number().int().safe().nonnegative().max(1e12);
 const label=z.string().trim().min(1).max(120);
 const transaction=z.object({id:label,name:label,type:z.enum(['income','expense','transfer']),amount:money.positive(),account:label,to:z.string().optional(),received:money.optional(),category:label,partyId:label.optional(),debtAction:z.enum(['lend','borrow','collect','repay']).optional(),sharedGroupId:label.optional(),recurringId:label.optional(),paidBy:z.string().max(120).optional(),participants:z.array(label).min(1).max(100).optional(),paymentMethod:z.string().max(120).optional(),paymentMethodName:z.string().max(80).optional(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/,'Choose a valid time.').optional(),notes:z.string().max(2000).optional(),tags:z.string().max(250).optional(),splits:z.array(z.object({category:label,amount:money.positive()})).max(20).optional()});
 
-async function context(){const db=await createClient();const {data:{user},error}=await db.auth.getUser();if(error||!user)throw Error('Unauthorized');return {db,user};}
-function check(error:{message:string}|null){if(error)throw Error(error.message);}
+async function context(){const db=await createClient();const {data:{user},error}=await db.auth.getUser();if(isAuthOutage(error))throw new ServiceError();if(error||!user)throw Error('Unauthorized');return {db,user};}
+function check(error:{message:string;code?:string}|null){if(error)throw databaseFailure(error);}
 async function owned(db:Awaited<ReturnType<typeof createClient>>,id:string,owner:string){const {data,error}=await db.from('profiles').select('*').eq('id',id).eq('owner',owner).maybeSingle();check(error);if(!data)throw Error('Profile not found');return data;}
-async function load(db:Awaited<ReturnType<typeof createClient>>,id:string){const {data:rows,error}=await db.from('records').select('id,kind,data').eq('profile',id);check(error);const data:Record<string,any[]>={};kinds.forEach(k=>data[k]=[]);rows?.forEach(r=>data[r.kind]?.push({...r.data,id:r.id}));return data;}
+async function load(db:Awaited<ReturnType<typeof createClient>>,id:string){const rows=await fetchAll<{id:string;kind:string;data:Record<string,unknown>}>((from,to)=>db.from('records').select('id,kind,data').eq('profile',id).order('id').range(from,to));const data:Record<string,any[]>={};kinds.forEach(k=>data[k]=[]);rows.forEach(r=>data[r.kind]?.push({...r.data,id:r.id}));return data;}
 // Applies a debt-party plan from partySyncPlan: links, new members, and parties a group created.
 async function applyParties(db:Awaited<ReturnType<typeof createClient>>,profile:string,plan:ReturnType<typeof partySyncPlan>){
  if(plan.upserts.length){const {error}=await db.from('records').upsert(plan.upserts.map(p=>({id:p.id,profile,kind:'parties',data:p})),{onConflict:'id'});check(error);}
@@ -35,7 +36,10 @@ function sameData(a:unknown,b:unknown):boolean{if(a===b)return true;if(!a||!b||t
 // record is not mistaken for a conflict. Includes rows the database triggers touched in the same
 // transactions (linked shared-group entries).
 async function touched(db:Db,profile:string,ids:string[]){if(!ids.length)return [];const own=await db.from('history').select('record,created').eq('profile',profile).in('record',ids).order('created',{ascending:false}).limit(50);check(own.error);const times=[...new Set((own.data||[]).map(h=>h.created))].slice(0,20);if(!times.length)return [];const all=await db.from('history').select('record,created').eq('profile',profile).in('created',times);check(all.error);const out=new Map<string,string>();for(const h of all.data||[])if(!out.has(h.record)||out.get(h.record)!<h.created)out.set(h.record,h.created);return [...out].map(([id,at])=>({id,at}));}
-function failure(e:unknown){const requestId=crypto.randomUUID();const message=e instanceof z.ZodError?e.issues.map(i=>i.message).join(' '):e instanceof Error?e.message:'Request failed';const status=message==='Unauthorized'?401:message==='Profile not found'?404:400;return Response.json({error:message,requestId},{status,headers:{'Cache-Control':'no-store'}})}
+function failure(e:unknown){const requestId=crypto.randomUUID();
+ if(e instanceof ServiceError){console.error('finance api unavailable',requestId);return Response.json({error:e.message,requestId},{status:e.status,headers:{'Cache-Control':'no-store'}})}
+ // Messages this code writes (plain Error) and validation issues are for the reader; anything else, such as malformed JSON, is not.
+ const message=e instanceof z.ZodError?e.issues.map(i=>i.message).join(' '):e instanceof Error&&e.name==='Error'?e.message:'The request could not be processed.';const status=message==='Unauthorized'?401:message==='Profile not found'?404:message==='Invalid request origin'?403:400;return Response.json({error:message,requestId},{status,headers:{'Cache-Control':'no-store'}})}
 export async function GET(req:Request){try{
  const {db,user}=await context();let {data:ps,error}=await db.from('profiles').select('*').eq('owner',user.id).order('slot');check(error);
  if(!ps?.length){const result=await db.from('profiles').upsert({owner:user.id,slot:0,name:'Personal',country:'India',currency:'INR'},{onConflict:'owner,slot',ignoreDuplicates:true});check(result.error);const result2=await db.from('profiles').select('*').eq('owner',user.id).order('slot');check(result2.error);ps=result2.data;}

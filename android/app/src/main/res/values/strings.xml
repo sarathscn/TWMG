@@ -15,4 +15,20 @@
     <string name="locked_body">Your balances stay hidden until you unlock.</string>
     <string name="unlock_button">Unlock</string>
     <string name="lock_unavailable">App lock couldn\'t start on this device. Your setting wasn\'t changed.</string>
+    <string name="saved_to_app_files">Saved to this app\'s files: %1$s</string>
+    <string name="startup_tagline">The way money goes</string>
+    <string name="startup_initializing">Getting things ready…</string>
+    <string name="startup_restoring">Restoring your session…</string>
+    <string name="startup_connecting">Connecting…</string>
+    <string name="startup_loading">Loading your money…</string>
+    <string name="startup_retrying">Trying again…</string>
+    <string name="startup_ready">Ready</string>
+    <string name="startup_retry">Try again</string>
+    <string name="startup_no_internet">You\'re offline</string>
+    <string name="startup_no_internet_detail">TWMG needs a connection the first time it opens on this phone. Check your internet and try again.</string>
+    <string name="startup_server">TWMG can\'t be reached</string>
+    <string name="startup_server_detail">The server isn\'t responding right now. Your saved data is safe. Please try again in a moment.</string>
+    <string name="startup_failed">TWMG couldn\'t start</string>
+    <string name="startup_failed_detail">This phone\'s Android System WebView isn\'t available. Update or enable it in the Play Store, then try again.</string>
+    <string name="session_expired">Your session ended. Please sign in again.</string>
 </resources>

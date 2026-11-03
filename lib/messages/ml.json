@@ -920,5 +920,16 @@
   "Please choose one.": "ദയവായി ഒന്ന് തിരഞ്ഞെടുക്കുക.",
   "Choose a category.": "ഒരു വിഭാഗം തിരഞ്ഞെടുക്കുക.",
   "Choose an account.": "ഒരു അക്കൗണ്ട് തിരഞ്ഞെടുക്കുക.",
-  "Choose a valid time.": "സാധുവായ സമയം തിരഞ്ഞെടുക്കുക."
+  "Choose a valid time.": "സാധുവായ സമയം തിരഞ്ഞെടുക്കുക.",
+  "Show more": "കൂടുതൽ കാണിക്കുക",
+  "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.": "TWMG ഇപ്പോൾ ലഭ്യമല്ല. നിങ്ങളുടെ ഡാറ്റ സുരക്ഷിതമാണ്. അൽപ്പസമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.",
+  "TWMG is temporarily unavailable. Please try again shortly.": "TWMG ഇപ്പോൾ ലഭ്യമല്ല. അൽപ്പസമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.",
+  "Can't reach the server. Check your connection and retry.": "സെർവറിൽ എത്താനാകുന്നില്ല. കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "The server took too long to respond. Please retry.": "സെർവർ പ്രതികരിക്കാൻ വളരെ സമയമെടുത്തു. വീണ്ടും ശ്രമിക്കുക.",
+  "The request could not be processed.": "അഭ്യർത്ഥന പൂർത്തിയാക്കാനായില്ല.",
+  "This change breaks a data rule and was not saved.": "ഈ മാറ്റം ഒരു ഡാറ്റാ നിയമം ലംഘിക്കുന്നു, അതിനാൽ സംരക്ഷിച്ചില്ല.",
+  "You do not have access to this record.": "ഈ രേഖയിലേക്ക് നിങ്ങൾക്ക് പ്രവേശനമില്ല.",
+  "Something went wrong on this screen": "ഈ സ്ക്രീനിൽ എന്തോ പിശക് സംഭവിച്ചു",
+  "Your saved data is safe. Try again, or reload the app if this keeps happening.": "സംരക്ഷിച്ച ഡാറ്റ സുരക്ഷിതമാണ്. വീണ്ടും ശ്രമിക്കുക, തുടർന്നും സംഭവിച്ചാൽ ആപ്പ് റീലോഡ് ചെയ്യുക.",
+  "Reload the app": "ആപ്പ് റീലോഡ് ചെയ്യുക"
 }

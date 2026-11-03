@@ -920,5 +920,16 @@
   "Please choose one.": "يرجى اختيار واحد.",
   "Choose a category.": "اختر فئة.",
   "Choose an account.": "اختر حسابًا.",
-  "Choose a valid time.": "اختر وقتًا صالحًا."
+  "Choose a valid time.": "اختر وقتًا صالحًا.",
+  "Show more": "عرض المزيد",
+  "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.": "TWMG غير متاح مؤقتًا. بياناتك في أمان. يرجى المحاولة مرة أخرى بعد قليل.",
+  "TWMG is temporarily unavailable. Please try again shortly.": "TWMG غير متاح مؤقتًا. يرجى المحاولة مرة أخرى بعد قليل.",
+  "Can't reach the server. Check your connection and retry.": "يتعذر الوصول إلى الخادم. تحقق من اتصالك وحاول مرة أخرى.",
+  "The server took too long to respond. Please retry.": "استغرق الخادم وقتًا طويلاً للرد. يرجى المحاولة مرة أخرى.",
+  "The request could not be processed.": "تعذرت معالجة الطلب.",
+  "This change breaks a data rule and was not saved.": "هذا التغيير يخالف قاعدة بيانات ولم يتم حفظه.",
+  "You do not have access to this record.": "ليس لديك إذن للوصول إلى هذا السجل.",
+  "Something went wrong on this screen": "حدث خطأ في هذه الشاشة",
+  "Your saved data is safe. Try again, or reload the app if this keeps happening.": "بياناتك المحفوظة في أمان. حاول مرة أخرى، أو أعد تحميل التطبيق إذا تكرر ذلك.",
+  "Reload the app": "إعادة تحميل التطبيق"
 }

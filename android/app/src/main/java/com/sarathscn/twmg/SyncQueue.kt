@@ -36,7 +36,13 @@ object SyncQueue {
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun all(context: Context): JSONArray = synchronized(lock) {
-        try { file(context).takeIf { it.exists() }?.readText()?.let { JSONArray(it) } ?: JSONArray() } catch (e: Exception) { JSONArray() }
+        val current = file(context)
+        try { current.takeIf { it.exists() }?.readText()?.let { JSONArray(it) } ?: JSONArray() }
+        catch (e: Exception) {
+            // An unreadable queue is set aside, not overwritten by the next save, so it can still be recovered.
+            current.renameTo(File(current.parentFile, current.name + ".unreadable-" + System.currentTimeMillis()))
+            JSONArray()
+        }
     }
 
     private fun save(context: Context, ops: JSONArray) = synchronized(lock) {
@@ -131,6 +137,7 @@ object SyncQueue {
             val (status, text) = try {
                 val connection = (URL("$base/api/finance").openConnection() as HttpURLConnection).apply {
                     requestMethod = "PUT"; connectTimeout = 15_000; readTimeout = 30_000; doOutput = true
+                    instanceFollowRedirects = false
                     setRequestProperty("Content-Type", "application/json")
                     setRequestProperty("Accept", "application/json")
                     // The API only accepts writes from its own origin.
@@ -180,5 +187,10 @@ object SyncBus {
 }
 
 class OutboxWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
-    override fun doWork(): Result = if (SyncQueue.flush(applicationContext)) Result.success() else Result.retry()
+    // Anything unexpected (a full disk, a malformed entry) retries later instead of failing the job for good,
+    // which would strand queued changes until the app next opens.
+    override fun doWork(): Result = try { if (SyncQueue.flush(applicationContext)) Result.success() else Result.retry() } catch (e: Exception) {
+        SyncQueue.setState(applicationContext, "offline")
+        Result.retry()
+    }
 }

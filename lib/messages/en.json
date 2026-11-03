@@ -920,5 +920,16 @@
   "Please choose one.": "Please choose one.",
   "Choose a category.": "Choose a category.",
   "Choose an account.": "Choose an account.",
-  "Choose a valid time.": "Choose a valid time."
+  "Choose a valid time.": "Choose a valid time.",
+  "Show more": "Show more",
+  "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.": "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.",
+  "TWMG is temporarily unavailable. Please try again shortly.": "TWMG is temporarily unavailable. Please try again shortly.",
+  "Can't reach the server. Check your connection and retry.": "Can't reach the server. Check your connection and retry.",
+  "The server took too long to respond. Please retry.": "The server took too long to respond. Please retry.",
+  "The request could not be processed.": "The request could not be processed.",
+  "This change breaks a data rule and was not saved.": "This change breaks a data rule and was not saved.",
+  "You do not have access to this record.": "You do not have access to this record.",
+  "Something went wrong on this screen": "Something went wrong on this screen",
+  "Your saved data is safe. Try again, or reload the app if this keeps happening.": "Your saved data is safe. Try again, or reload the app if this keeps happening.",
+  "Reload the app": "Reload the app"
 }

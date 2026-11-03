@@ -1,16 +1,22 @@
 package com.sarathscn.twmg
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Base64
@@ -20,10 +26,12 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -43,22 +51,41 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
+import com.sarathscn.twmg.StartupRules.Event
+import com.sarathscn.twmg.StartupRules.Stage
+import com.sarathscn.twmg.StartupRules.covering
+import com.sarathscn.twmg.StartupRules.failed
 import java.io.File
 
 /**
  * TWMG for Android: hosts the TWMG web app (Supabase sign-in, data and all screens) in a
  * locked-down WebView. Native code adds what a browser tab can't: the system back gesture
  * walks the app's own history, edge-to-edge insets, verified links for email confirmation
- * and password reset, the photo picker, file downloads, an offline retry screen, a biometric
- * App lock, local bill reminders and passkeys (WebAuthn) where the device supports them.
+ * and password reset, the photo picker, file downloads, an animated startup screen with retry, a
+ * biometric App lock, local bill reminders and passkeys (WebAuthn) where the device supports them.
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private lateinit var lockView: View
+    private var startupView: StartupView? = null
+    private var startup = StartupRules.State()
+    private var dismissing = false
+    private var webDead = false
+    private var resumed = false
+    private var targetUrl = BuildConfig.APP_URL
+    private var clearHistoryOnReady = false
+    private val main = Handler(Looper.getMainLooper())
+    private val watchdog = Runnable { dispatch(Event.TimedOut(isOnline())) }
+    // Back online while the offline screen is up: try again without being asked.
+    private val networkWatch = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) { main.post { if (startup.stage == Stage.NO_INTERNET) retryStartup() } }
+    }
+    private val webAlive get() = ::web.isInitialized && !webDead
     private val appUri: Uri = Uri.parse(BuildConfig.APP_URL)
     @Volatile private var onAppPage = false
     private var locked = false
@@ -78,6 +105,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Hands the system launch screen over to the first frame of StartupView, which matches it.
+        installSplashScreen().setOnExitAnimationListener { splash ->
+            if (ValueAnimator.areAnimatorsEnabled()) splash.view.animate().alpha(0f).setDuration(160).withEndAction { splash.remove() }.start() else splash.remove()
+        }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // One prompt for the activity's lifetime, created in onCreate as the biometric library requires.
@@ -99,60 +130,155 @@ class MainActivity : AppCompatActivity() {
         SyncBus.listener = { status -> notifyWebJson("sync", status.toString()) }
         if (SyncQueue.activeUser(this) != null) SyncQueue.schedule(this)
         if (Reminders.enabled(this)) Reminders.schedule(this)
+        // The startup screen runs edge to edge; the app below it stays inside the system bars.
+        val outer = FrameLayout(this)
         val root = FrameLayout(this)
-        web = WebView(this).apply { setBackgroundColor(Color.TRANSPARENT) }
+        outer.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        val cover = StartupView(this, startupIsDark()) { retryStartup() }
+        startupView = cover
+        outer.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        cover.show(startup.stage)
+        setContentView(outer)
+        // Keep content clear of the status bar, navigation bar, display cutout and keyboard.
+        ViewCompat.setOnApplyWindowInsetsListener(outer) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
+            root.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            startupView?.setSafeInsets(bars.left, bars.top, bars.right, bars.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
+        // A phone with no usable system WebView can't run the app: say so instead of crashing.
+        val created = try { WebView(this) } catch (e: Exception) { null }
+        if (created == null) { dispatch(Event.DeviceFailed); return }
+        web = created.apply { setBackgroundColor(Color.TRANSPARENT) }
         root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         lockView = buildLockView()
         root.addView(lockView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        setContentView(root)
-        // Keep content clear of the status bar, navigation bar, display cutout and keyboard.
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-            WindowInsetsCompat.CONSUMED
-        }
         configure(web)
         applySecureFlag()
         // System back (button or predictive gesture) steps back through in-app navigation first.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (!locked && web.canGoBack()) web.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed(); isEnabled = true }
+                if (webAlive && !locked && !startup.covering && web.canGoBack()) web.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed(); isEnabled = true }
             }
         })
-        if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(startUrl(intent))
+        dispatch(Event.Begin(hasSessionCookie()))
+        targetUrl = startUrl(intent)
+        if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(targetUrl)
         if (isLockOn()) lock()
+    }
+
+    // ---- Startup screen ---------------------------------------------------------------------
+    /** Moves the startup rules on, and makes the screen match. Duplicate events change nothing. */
+    private fun dispatch(event: Event) {
+        val before = startup
+        startup = StartupRules.next(before, event)
+        if (before.stage != Stage.AUTH_EXPIRED && startup.stage == Stage.AUTH_EXPIRED) Toast.makeText(this, R.string.session_expired, Toast.LENGTH_LONG).show()
+        if (startup.covering) {
+            if (startupView == null) showStartupAgain()
+            dismissing = false
+            startupView?.show(startup.stage)
+            if (webAlive) web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        } else if (before.covering) leaveStartup()
+        armWatchdog()
+    }
+
+    private fun armWatchdog() {
+        main.removeCallbacks(watchdog)
+        if (resumed) StartupRules.watchdogMs(startup)?.let { main.postDelayed(watchdog, it) }
+    }
+
+    /** Fades out only after the page has painted, so the app never appears as a blank flash. */
+    private fun leaveStartup() {
+        if (dismissing) return
+        dismissing = true
+        var left = false
+        val go = {
+            if (!left) {
+                left = true
+                main.removeCallbacks(watchdog)
+                if (dismissing) startupView?.dismiss {
+                    startupView = null; dismissing = false
+                    // A page failed during the fade: the error screen comes straight back.
+                    if (startup.covering) { showStartupAgain(); startupView?.show(startup.stage) }
+                    else if (webAlive) { web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO; if (clearHistoryOnReady) { web.clearHistory(); clearHistoryOnReady = false } }
+                }
+            }
+        }
+        if (webAlive) { web.postVisualStateCallback(1, object : WebView.VisualStateCallback() { override fun onComplete(requestId: Long) { go() } }); main.postDelayed(go, 800) } else go()
+    }
+
+    /** A page load failed after the app was already showing: bring the screen back with its Retry button. */
+    private fun showStartupAgain() {
+        val outer = window.decorView.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) as? ViewGroup ?: return
+        val cover = StartupView(this, startupIsDark()) { retryStartup() }
+        startupView = cover
+        outer.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        ViewCompat.requestApplyInsets(outer)
+    }
+
+    private fun retryStartup() {
+        if (!startup.failed) return
+        if (!webAlive) { recreate(); return }
+        dispatch(Event.Retry)
+        clearHistoryOnReady = true
+        web.loadUrl(targetUrl)
+    }
+
+    private fun isOnline(): Boolean {
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return true
+        val network = manager.activeNetwork ?: return false
+        return manager.getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }
+
+    private fun hasSessionCookie() = try { CookieManager.getInstance().getCookie(BuildConfig.APP_URL)?.split(';')?.any { it.trim().substringBefore('=').contains("-auth-token") } == true } catch (e: Exception) { false }
+
+    /** The theme chosen inside the app when it has reported one, otherwise the phone's. */
+    private fun startupIsDark(): Boolean {
+        if (prefs.contains(KEY_DARK)) return prefs.getBoolean(KEY_DARK, false)
+        return (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf(::isAppUrl)?.let { web.loadUrl(it.toString()) }
+        intent.data?.takeIf(::isAppUrl)?.let { targetUrl = it.toString(); if (webAlive) web.loadUrl(targetUrl) }
     }
 
     // Pause WebView work while the app isn't visible (battery), and re-lock after 30 s away.
     override fun onStart() {
         super.onStart()
+        resumed = true
+        armWatchdog()
+        startupView?.startLoops()
+        try { getSystemService(ConnectivityManager::class.java)?.registerDefaultNetworkCallback(networkWatch) } catch (e: Exception) { /* the Retry button still works */ }
+        if (!webAlive) return
         web.resumeTimers()
         if (isLockOn() && !locked && backgroundedAt > 0 && SystemClock.elapsedRealtime() - backgroundedAt > LOCK_AFTER_MS) lock()
     }
 
-    override fun onResume() { super.onResume(); web.onResume() }
+    override fun onResume() { super.onResume(); if (webAlive) web.onResume() }
     // Keep the sign-in session on disk so the app can reopen with it (and offline).
-    override fun onPause() { web.onPause(); CookieManager.getInstance().flush(); super.onPause() }
+    override fun onPause() { if (webAlive) { web.onPause(); CookieManager.getInstance().flush() }; super.onPause() }
 
     override fun onStop() {
         backgroundedAt = SystemClock.elapsedRealtime()
-        web.pauseTimers()
+        resumed = false
+        // A paused page can't report in: the watchdog only counts time the app is on screen.
+        main.removeCallbacks(watchdog)
+        startupView?.stopLoops()
+        try { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(networkWatch) } catch (e: Exception) { /* wasn't registered */ }
+        if (webAlive) web.pauseTimers()
         super.onStop()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        web.saveState(outState)
+        if (webAlive) web.saveState(outState)
     }
 
     override fun onDestroy() {
         SyncBus.listener = null
-        web.destroy()
+        main.removeCallbacksAndMessages(null)
+        if (webAlive) web.destroy()
         super.onDestroy()
     }
 
@@ -194,15 +320,31 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                 onAppPage = url?.let { isAppUrl(Uri.parse(it)) } == true
+                dispatch(Event.PageStarted(hasSessionCookie()))
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 onAppPage = url?.let { isAppUrl(Uri.parse(it)) } == true
                 if (onAppPage) view.evaluateJavascript(DOWNLOAD_HOOK, null)
+                dispatch(Event.PageFinished(StartupRules.pageReportsReady(url?.let { Uri.parse(it).path })))
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) view.loadDataWithBaseURL(null, offlinePage(), "text/html", "utf-8", null)
+                // An aborted load is a newer navigation taking over, not a failure.
+                if (request.isForMainFrame && error.description?.contains("ERR_ABORTED") != true) { view.stopLoading(); dispatch(Event.LoadFailed(isOnline())) }
+            }
+
+            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
+                if (request.isForMainFrame && errorResponse.statusCode >= 500) dispatch(Event.ServerError)
+            }
+
+            // The page's renderer crashed or was killed for memory. Without this the whole app dies with it.
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                webDead = true
+                (view.parent as? ViewGroup)?.removeView(view)
+                view.destroy()
+                recreate()
+                return true
             }
         }
         view.webChromeClient = object : WebChromeClient() {
@@ -271,25 +413,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun notifyWeb(type: String, enabled: Boolean) {
-        runOnUiThread { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',enabled:$enabled}}))", null) }
+        runOnUiThread { if (webAlive) web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',enabled:$enabled}}))", null) }
     }
 
     private fun notifyWebJson(type: String, json: String) {
-        runOnUiThread { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',data:$json}}))", null) }
+        runOnUiThread { if (webAlive) web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'$type',data:$json}}))", null) }
     }
 
     private fun openExternally(uri: Uri) {
+        // Only ordinary links leave the app; a page can't launch other apps through custom schemes.
+        if (uri.scheme !in setOf("https", "http", "mailto", "tel")) return
         try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (e: ActivityNotFoundException) { Toast.makeText(this, R.string.no_app_for_link, Toast.LENGTH_SHORT).show() }
-    }
-
-    private fun offlinePage(): String {
-        val dark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-        val (bg, fg, muted) = if (dark) Triple("#17221d", "#e2e8dc", "#9da895") else Triple("#f6f6f1", "#293b31", "#7b857d")
-        return """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-            body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:$bg;color:$fg;font-family:system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
-            h1{font-size:20px;margin:0 0 8px}p{color:$muted;font-size:14px;line-height:1.5;margin:0 0 20px}
-            a{display:inline-block;background:#2d6048;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600}
-            </style></head><body><div><h1>You're offline</h1><p>TWMG needs a connection to load your money. Check your internet and try again.</p><a href="${BuildConfig.APP_URL}">Try again</a></div></body></html>"""
     }
 
     /**
@@ -300,6 +434,14 @@ class MainActivity : AppCompatActivity() {
         // Every method is guarded: a native failure must return a safe value, never throw into the page
         // (WebView turns a Java exception into a JS error, which takes the whole screen down).
         private inline fun <T> safe(fallback: T, block: () -> T): T = try { if (onAppPage) block() else fallback } catch (e: Throwable) { fallback }
+
+        // ---- Startup screen ----
+        /** The app screen is reading its data. */
+        @JavascriptInterface fun startupStage(stage: String) = safe(Unit) { if (stage == "data") runOnUiThread { dispatch(Event.LoadingData) } }
+        /** The app screen has something to show: data, the sign-in screen, or its own error with a retry. */
+        @JavascriptInterface fun startupReady(outcome: String) = safe(Unit) { runOnUiThread { dispatch(Event.WebReady(signedOut = outcome == "signed-out")) } }
+        /** Remembers the theme chosen in the app, so the next startup screen opens in it. */
+        @JavascriptInterface fun setAppTheme(dark: Boolean) = safe(Unit) { prefs.edit().putBoolean(KEY_DARK, dark).apply() }
 
         @JavascriptInterface fun appLockAvailable(): Boolean = safe(false) { canUseLock() }
         @JavascriptInterface fun appLockEnabled(): Boolean = safe(false) { isLockOn() }
@@ -331,7 +473,7 @@ class MainActivity : AppCompatActivity() {
         /** Sign-out: forget this account's queued changes on this device. */
         @JavascriptInterface fun clearLocal(user: String) = safe(Unit) { SyncQueue.clearUser(this@MainActivity, user) }
         /** Whether the device still holds a sign-in session cookie (it is removed on sign-out). */
-        @JavascriptInterface fun hasSession(): Boolean = safe(false) { CookieManager.getInstance().getCookie(BuildConfig.APP_URL)?.split(';')?.any { it.trim().substringBefore('=').contains("-auth-token") } == true }
+        @JavascriptInterface fun hasSession(): Boolean = safe(false) { hasSessionCookie() }
         /** The installed app version, straight from the package (set by android-release.json at build time). */
         @JavascriptInterface fun appVersion(): String = safe("{}") {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -371,7 +513,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             runOnUiThread {
-                Toast.makeText(this@MainActivity, if (result.isSuccess) getString(R.string.saved_to_downloads, safeName) else getString(R.string.save_failed), Toast.LENGTH_LONG).show()
+                // Before Android 10 the file goes to this app's own folder, not the shared Downloads.
+                val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) R.string.saved_to_downloads else R.string.saved_to_app_files
+                Toast.makeText(this@MainActivity, if (result.isSuccess) getString(saved, safeName) else getString(R.string.save_failed), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -380,6 +524,7 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val KEY_APP_LOCK = "app_lock"
+        const val KEY_DARK = "startup_dark"
         const val LOCK_AFTER_MS = 30_000L
         // The web app downloads via `a.download` + blob URLs, which WebView ignores. Remember each
         // blob as it's created, and hand downloads to the native bridge instead.

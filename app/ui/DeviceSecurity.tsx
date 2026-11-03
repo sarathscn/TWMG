@@ -7,6 +7,9 @@ import { passkeysAvailable, passkeyMessage } from '../../lib/passkeys';
 type Passkey = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
 // Native features exposed by the TWMG Android app (MainActivity.NativeBridge). Absent in browsers.
 type AndroidBridge = {
+    startupStage(stage: string): void;
+    startupReady(outcome: string): void;
+    setAppTheme(dark: boolean): void;
     appLockAvailable(): boolean;
     appLockEnabled(): boolean;
     setAppLockEnabled(enabled: boolean): void;
@@ -30,6 +33,7 @@ export const isAndroidApp = () => typeof bridge()?.queueAdd === 'function';
 const bridge = () => (typeof window !== 'undefined' ? (window as unknown as { TWMGAndroid?: Partial<AndroidBridge> }).TWMGAndroid : undefined);
 // Calls a native method without ever letting a native failure break the page: a Java exception
 // surfaces in WebView as a thrown JS error, which would otherwise take down the whole screen.
+// Older installed versions of the app don't have every method; callNative skips what's missing.
 export function callNative<K extends keyof AndroidBridge>(name: K, ...args: Parameters<AndroidBridge[K]>): ReturnType<AndroidBridge[K]> | undefined {
     const b = bridge(), fn = b?.[name] as ((...a: unknown[]) => unknown) | undefined;
     if (typeof fn !== 'function') return undefined;

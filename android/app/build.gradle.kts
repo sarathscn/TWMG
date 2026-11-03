@@ -60,6 +60,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.fragment:fragment-ktx:1.8.5")
+    // Native launch screen on every supported Android version (Android 12's API, back-ported).
+    implementation("androidx.core:core-splashscreen:1.0.1")
     // AppCompat theme/activity: required by the biometric library's dialogs.
     implementation("androidx.appcompat:appcompat:1.7.0")
     // System biometric prompt for App lock; biometric data never reaches the app.

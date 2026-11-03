@@ -920,5 +920,16 @@
   "Please choose one.": "कृपया एक चुनें।",
   "Choose a category.": "कोई श्रेणी चुनें।",
   "Choose an account.": "कोई खाता चुनें।",
-  "Choose a valid time.": "मान्य समय चुनें।"
+  "Choose a valid time.": "मान्य समय चुनें।",
+  "Show more": "और दिखाएँ",
+  "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.": "TWMG अभी उपलब्ध नहीं है। आपका डेटा सुरक्षित है। कृपया थोड़ी देर में फिर कोशिश करें।",
+  "TWMG is temporarily unavailable. Please try again shortly.": "TWMG अभी उपलब्ध नहीं है। कृपया थोड़ी देर में फिर कोशिश करें।",
+  "Can't reach the server. Check your connection and retry.": "सर्वर तक नहीं पहुँच पा रहे हैं। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "The server took too long to respond. Please retry.": "सर्वर ने जवाब देने में बहुत समय लिया। कृपया फिर कोशिश करें।",
+  "The request could not be processed.": "अनुरोध पूरा नहीं हो सका।",
+  "This change breaks a data rule and was not saved.": "यह बदलाव एक डेटा नियम तोड़ता है और सहेजा नहीं गया।",
+  "You do not have access to this record.": "आपके पास इस रिकॉर्ड की पहुँच नहीं है।",
+  "Something went wrong on this screen": "इस स्क्रीन पर कुछ गड़बड़ हो गई",
+  "Your saved data is safe. Try again, or reload the app if this keeps happening.": "आपका सहेजा गया डेटा सुरक्षित है। फिर कोशिश करें, या बार-बार हो तो ऐप दोबारा लोड करें।",
+  "Reload the app": "ऐप दोबारा लोड करें"
 }

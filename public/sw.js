@@ -8,6 +8,9 @@ self.addEventListener('install', event => { event.waitUntil(caches.open(SHELL).t
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== SHELL && k !== ASSETS).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
+// Build assets get new names every release, so old ones would pile up on the phone forever.
+const MAX_ASSETS = 150;
+async function trim(cache) { const keys = await cache.keys(); await Promise.all(keys.slice(0, Math.max(0, keys.length - MAX_ASSETS)).map(k => cache.delete(k))); }
 function timeout(ms) { return new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)); }
 self.addEventListener('fetch', event => {
   const req = event.request, url = new URL(req.url);
@@ -18,6 +21,8 @@ self.addEventListener('fetch', event => {
         // A slow network falls back to the saved page after a few seconds instead of a blank screen.
         const res = await Promise.race([fetch(req), timeout(4000)]);
         if (res.ok && !res.redirected) { const copy = res.clone(); caches.open(SHELL).then(c => c.put(url.pathname === '/login' ? '/login' : '/', copy)); }
+        // A server error shouldn't replace a working saved page; the app's own requests still report the outage.
+        if (res.status >= 500) return (await caches.match(url.pathname === '/login' ? '/login' : '/')) || res;
         return res;
       } catch {
         return (await caches.match(url.pathname === '/login' ? '/login' : '/')) || (await caches.match('/')) || Response.error();
@@ -26,6 +31,6 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (url.pathname.startsWith('/_next/static/') || /\.(?:svg|png|ico|woff2?)$/.test(url.pathname)) {
-    event.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => { if (res.ok) { const copy = res.clone(); caches.open(ASSETS).then(c => c.put(req, copy)); } return res; })));
+    event.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => { if (res.ok) { const copy = res.clone(); caches.open(ASSETS).then(c => c.put(req, copy).then(() => trim(c))); } return res; })));
   }
 });

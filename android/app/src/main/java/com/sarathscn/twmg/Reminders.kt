@@ -108,7 +108,7 @@ object Reminders {
         val lang = prefs(context).getString(KEY_LANG, "en")
         val base = BuildConfig.APP_URL
         val cookies = CookieManager.getInstance()
-        val connection = (URL("$base/api/reminders?lang=$lang").openConnection() as HttpURLConnection).apply {
+        val connection = (URL("$base/api/reminders?lang=$lang&today=${LocalDate.now()}").openConnection() as HttpURLConnection).apply {
             connectTimeout = 8_000; readTimeout = 8_000; instanceFollowRedirects = false
             setRequestProperty("Accept", "application/json")
             cookies.getCookie(base)?.let { setRequestProperty("Cookie", it) }

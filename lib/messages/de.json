@@ -920,5 +920,16 @@
   "Please choose one.": "Bitte eine Option wählen.",
   "Choose a category.": "Wähle eine Kategorie.",
   "Choose an account.": "Wähle ein Konto.",
-  "Choose a valid time.": "Wähle eine gültige Uhrzeit."
+  "Choose a valid time.": "Wähle eine gültige Uhrzeit.",
+  "Show more": "Mehr anzeigen",
+  "TWMG is temporarily unavailable. Your data is safe. Please try again shortly.": "TWMG ist vorübergehend nicht verfügbar. Deine Daten sind sicher. Bitte versuche es gleich noch einmal.",
+  "TWMG is temporarily unavailable. Please try again shortly.": "TWMG ist vorübergehend nicht verfügbar. Bitte versuche es gleich noch einmal.",
+  "Can't reach the server. Check your connection and retry.": "Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+  "The server took too long to respond. Please retry.": "Der Server hat zu lange gebraucht. Bitte versuche es erneut.",
+  "The request could not be processed.": "Die Anfrage konnte nicht verarbeitet werden.",
+  "This change breaks a data rule and was not saved.": "Diese Änderung verstößt gegen eine Datenregel und wurde nicht gespeichert.",
+  "You do not have access to this record.": "Du hast keinen Zugriff auf diesen Eintrag.",
+  "Something went wrong on this screen": "Auf diesem Bildschirm ist etwas schiefgelaufen",
+  "Your saved data is safe. Try again, or reload the app if this keeps happening.": "Deine gespeicherten Daten sind sicher. Versuche es erneut oder lade die App neu, falls es wieder passiert.",
+  "Reload the app": "App neu laden"
 }
