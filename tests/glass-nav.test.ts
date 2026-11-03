@@ -20,7 +20,7 @@ test('It stays visible on short pages and at both ends, and ignores overscroll',
 test('Reduced motion, keyboard focus and the app guide all keep the bar available',()=>{
  const hook=readFileSync('app/ui/useBottomNavScroll.ts','utf8'),css=readFileSync('app/globals.css','utf8');
  assert.match(hook,/calm\.matches \? navStart\(target\.scrollTop\)/,'reduced motion never hides it');
- assert.match(css,/html\.nav-hidden:not\(:has\(\.guide-layer\)\) \.bottom-nav:not\(:focus-within\)\{/);
+ assert.match(css,/html\.nav-hidden:not\(:has\(\.guide-layer\)\) \.bottom-nav:not\(:has\(:focus-visible\)\)\{/);
  assert.match(css,/prefers-reduced-motion:reduce\)\{\*,\*:before,\*:after\{animation:none!important;transition:none!important\}/);
  assert.match(css,/prefers-reduced-transparency:reduce\),\(prefers-contrast:more\)/,'solid surfaces on request');
  for(const f of ['app/ui/Onboarding.tsx','app/ui/RecordAppearance.tsx'])assert.ok(!/behavior: 'smooth'/.test(readFileSync(f,'utf8').replace(/\? 'auto' : 'smooth'/g,'')),f+' respects reduced motion');

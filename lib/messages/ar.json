@@ -915,7 +915,6 @@
   "Default": "افتراضي",
   "View details": "عرض التفاصيل",
   "Choose category": "اختر الفئة",
-  "Time (optional)": "الوقت (اختياري)",
   "No time": "بدون وقت",
   "Please choose one.": "يرجى اختيار واحد.",
   "Choose a category.": "اختر فئة.",
@@ -931,5 +930,17 @@
   "You do not have access to this record.": "ليس لديك إذن للوصول إلى هذا السجل.",
   "Something went wrong on this screen": "حدث خطأ في هذه الشاشة",
   "Your saved data is safe. Try again, or reload the app if this keeps happening.": "بياناتك المحفوظة في أمان. حاول مرة أخرى، أو أعد تحميل التطبيق إذا تكرر ذلك.",
-  "Reload the app": "إعادة تحميل التطبيق"
+  "Reload the app": "إعادة تحميل التطبيق",
+  "Date from": "من تاريخ",
+  "Date to": "إلى تاريخ",
+  "Date to (optional)": "إلى تاريخ (اختياري)",
+  "Date and time": "التاريخ والوقت",
+  "Account and payment": "الحساب والدفع",
+  "Name / description (optional)": "الاسم / الوصف (اختياري)",
+  "Save Transaction": "حفظ المعاملة",
+  "Time": "الوقت",
+  "Hour": "الساعة",
+  "Minute": "الدقيقة",
+  "Now": "الآن",
+  "Choose a time.": "اختر وقتًا."
 }

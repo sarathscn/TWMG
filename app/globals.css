@@ -84,7 +84,7 @@ html{color-scheme:light}html[data-theme=dark]{color-scheme:dark}
 html[data-text-size="small"] .app{--twmg-text-scale:.92;zoom:var(--twmg-text-scale);width:100%;height:calc(100dvh / var(--twmg-text-scale));min-height:calc(100dvh / var(--twmg-text-scale))}
 html[data-text-size="medium"] .app{--twmg-text-scale:1;zoom:var(--twmg-text-scale);width:100%;height:100dvh;min-height:100dvh}
 html[data-text-size="large"] .app{--twmg-text-scale:1.08;zoom:var(--twmg-text-scale);width:100%;height:calc(100dvh / var(--twmg-text-scale));min-height:calc(100dvh / var(--twmg-text-scale))}
-html[data-text-size] .app .main-shell{height:100%;min-height:0}@media(max-width:700px){html[data-text-size] .app>.main-shell{height:calc(100% - 68px - env(safe-area-inset-bottom))}}.app,.identity-screen{-webkit-user-select:none;user-select:none}
+html[data-text-size] .app .main-shell{height:100%;min-height:0}@media(max-width:700px){html[data-text-size] .app>.main-shell{height:calc(100% - 68px - env(safe-area-inset-bottom))}}.app button,.app a,.app label,.app summary,.identity-screen button,.identity-screen a,.swipeable,.tx-row,.more-tile,.metric-link,.bottom-nav,.sidebar,.topbar,.tabs,.select-menu,.action-sheet,[role=button],[role=tab],[role=radio]{-webkit-user-select:none;user-select:none}
 input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
 
 input,select,textarea,button,.panel,.metric,.account-card,.item-card,.more-tile,.settings-panel,.table-wrap,.modal,.popover{max-width:100%}
@@ -404,8 +404,8 @@ button:active:not(:disabled){transform:scale(.97)}
 @keyframes twmg-tick{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
 .main-shell>main{animation:twmg-enter var(--t) var(--ease)}
 .modal,.action-sheet,.profile-switcher{animation:twmg-pop .3s var(--ease)}
-.select-menu{transform-origin:var(--radix-select-content-transform-origin);animation:twmg-menu-in .18s var(--ease)}
-.select-menu[data-state=closed]{animation:twmg-menu-out .1s ease-in forwards}
+
+.select-menu[data-state=closed]{animation:none}
 .confirm-dialog{animation:twmg-fade .18s ease-out}
 .confirm-dialog[data-state=closed],.confirm-overlay[data-state=closed]{animation:twmg-fade-out .12s ease-in forwards}
 .popover:not(.notification-center){animation:twmg-menu-in .18s var(--ease)}
@@ -418,7 +418,7 @@ button:active:not(:disabled){transform:scale(.97)}
  .bottom-nav button.active{background:color-mix(in srgb,var(--accent) 13%,transparent);font-weight:600}
  .bottom-nav .nav-add-transaction{margin-top:0}
  .nav-add-icon{width:46px;height:46px;border:0;border-radius:17px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 rgba(255,255,255,.25)}
- html.nav-hidden:not(:has(.guide-layer)) .bottom-nav:not(:focus-within){transform:translateY(calc(100% + 16px + env(safe-area-inset-bottom)));opacity:0;pointer-events:none}
+ html.nav-hidden:not(:has(.guide-layer)) .bottom-nav:not(:has(:focus-visible)){transform:translateY(calc(100% + 16px + env(safe-area-inset-bottom)));opacity:0;pointer-events:none}
  .toast{bottom:calc(var(--nav-space) + 6px)}
  .primary,.secondary,.icon-button{min-height:44px}.icon-button{min-width:44px}
  .modal{animation-name:twmg-sheet-up;border-radius:24px 24px 16px 16px}
@@ -534,3 +534,34 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
 [data-theme=dark] .notification-button i.notification-count{color:#2b0f0a;background:#ffb4a6}
 /* Touch screens: small controls keep their look but get a finger-sized hit area */
 @media(pointer:coarse){.text-button,.category-chip,.tabs button,.dashboard-calendar button,.ledger-title{position:relative}.text-button::after,.category-chip::after,.tabs button::after,.ledger-title::after{content:'';position:absolute;inset:-9px 0}.dashboard-calendar button::after{content:'';position:absolute;inset:-10px}}
+
+/* Press, hover and selection: one clean state per control. A row highlights as a whole (never cell by cell),
+   hover only exists where there is a pointer, and a tap leaves nothing behind. Editable fields stay selectable. */
+*{-webkit-tap-highlight-color:transparent}
+::selection{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+tr.tx-row:hover>td{background:transparent}
+@media(hover:hover){tr.tx-row:hover{background:var(--soft)}}
+tr.tx-row:active{background:var(--soft)}
+@media(hover:none){button.category-chip:hover{box-shadow:none;transform:none}.more-tile:hover{border-color:var(--glass-edge);background:var(--glass-card)}.account-card:hover,.metric-link:hover{transform:none}}
+/* Guided Add Transaction */
+.tx-progress{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.tx-progress-label{font-size:12px;color:var(--muted)}.tx-progress-label b{color:var(--text);font-weight:600}
+.tx-progress ol{display:flex;gap:6px;list-style:none;margin:0;padding:0}.tx-progress li{flex:1;min-width:0}
+.tx-progress button{position:relative;display:block;width:100%;height:5px;padding:0;border:0;border-radius:99px;background:var(--line);cursor:pointer}
+.tx-progress button::after{content:'';position:absolute;inset:-12px 0}
+.tx-progress button.done{background:color-mix(in srgb,var(--accent) 45%,var(--line))}.tx-progress button[aria-current=step]{background:var(--accent)}
+.tx-progress button:disabled{cursor:default}
+.tx-step[hidden]{display:none}
+.modal .tx-step .form-grid.date-time{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.time-popover{padding:8px;width:188px}
+.time-columns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.time-columns>div{display:flex;flex-direction:column;gap:2px;height:216px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.time-columns button{flex:none;min-height:36px;border:0;border-radius:9px;background:none;color:var(--text);font-size:14px;cursor:pointer}
+.time-columns button[aria-pressed=true]{background:var(--accent);color:var(--surface);font-weight:600}
+@media(hover:hover){.time-columns button:hover:not([aria-pressed=true]){background:var(--soft)}}
+/* Date filter */
+.date-filter{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.date-filter label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted)}
+/* Fields that open a menu stay still when pressed. Buttons shrink on press, but a dropdown opens on that same press
+   and takes its position and width from the field, so the menu appeared shrunken and then snapped out with it. */
+.themed-select:active:not(:disabled),.date-trigger:active:not(:disabled),.calendar-label:active:not(:disabled){transform:none}

@@ -1,10 +1,11 @@
 'use client';
+import { displayDate, localTime } from '../../lib/dates';
 import { useI18n } from './UIProvider';
-import { Children, isValidElement, useEffect, useId, useState, type ReactNode, type SelectHTMLAttributes, type InputHTMLAttributes } from 'react';
+import { useRef, Children, isValidElement, useEffect, useId, useState, type ReactNode, type SelectHTMLAttributes, type InputHTMLAttributes } from 'react';
 import { Select, Popover } from 'radix-ui';
 import { ar, de, hi, enUS } from 'react-day-picker/locale';
 import { DayPicker } from 'react-day-picker';
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Clock, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import 'react-day-picker/style.css';
 type Option = {
     value: string;
@@ -46,6 +47,17 @@ const parseIsoDate = (value?: string) => {
     const date = new Date(value + 'T12:00:00');
     return Number.isNaN(date.getTime()) ? undefined : date;
 };
+// The app's own time picker: 24-hour columns in the theme, instead of the phone's system dialog. Stores HH:MM.
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')), MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+export function TimeField({ name, defaultValue, required, 'aria-label': label }: { name?: string; defaultValue?: string; required?: boolean; 'aria-label'?: string }) {
+    const { tr } = useI18n();
+    const [value, setValue] = useState(defaultValue || ''), [open, setOpen] = useState(false), [invalid, setInvalid] = useState(false);
+    const hour = value.slice(0, 2), minute = value.slice(3, 5);
+    const panel = useRef<HTMLDivElement>(null);
+    const put = (next: string) => { setValue(next); setInvalid(false); };
+    useEffect(() => { if (open) requestAnimationFrame(() => panel.current?.querySelectorAll<HTMLElement>('[aria-pressed=true]').forEach(x => x.scrollIntoView({ block: 'center' }))); }, [open]);
+    return <span className="date-field"><input className="control-validation" tabIndex={-1} aria-hidden="true" type="text" name={name} value={value} onChange={() => { }} required={required} onInvalid={e => { e.preventDefault(); setInvalid(true); setOpen(true); }}/><Popover.Root open={open} onOpenChange={setOpen}><Popover.Trigger asChild><button type="button" className={'date-trigger ' + (invalid ? 'invalid' : '')} aria-label={tr(label || 'Time') + (value ? ' ' + value : '')} aria-required={required}><span className={value ? '' : 'placeholder'}>{value || '--:--'}</span><Clock size={16}/></button></Popover.Trigger><Popover.Portal><Popover.Content sideOffset={7} collisionPadding={12} align="start" className="calendar-popover time-popover" onEscapeKeyDown={e => e.stopPropagation()}><div className="time-columns" ref={panel}><div role="group" aria-label={tr('Hour')}>{HOURS.map(h => <button type="button" key={h} aria-pressed={h === hour} onClick={() => put(h + ':' + (minute || '00'))}>{h}</button>)}</div><div role="group" aria-label={tr('Minute')}>{MINUTES.map(m => <button type="button" key={m} aria-pressed={m === minute} onClick={() => { put((hour || '00') + ':' + m); setOpen(false); }}>{m}</button>)}</div></div><div className="calendar-actions"><button type="button" onClick={() => { put(''); setOpen(false); }}>{tr('Clear')}</button><button type="button" onClick={() => { put(localTime()); setOpen(false); }}>{tr('Now')}</button></div></Popover.Content></Popover.Portal></Popover.Root>{invalid && <small className="date-error">{tr('Choose a time.')}</small>}</span>;
+}
 export type CalendarMarker = { date: string; kind: 'transaction' | 'recurring' | 'credit-card' | 'debt' };
 export function DashboardCalendar({ month, selected, markers, onMonthChange, onSelect }: {
     month: string;
@@ -105,7 +117,7 @@ export function DateField({ name, value, defaultValue, onChange, required, min, 
             setOpen(next);
             if (next)
                 setMonth(selected || new Date());
-        }}><Popover.Trigger asChild><button type="button" id={id || generated} className={'date-trigger ' + (invalid ? 'invalid' : '')} aria-label={tr(props['aria-label'] || (name === 'date' ? 'Transaction date' : name === 'due' ? 'Due date' : 'Choose date'))} aria-required={required}><span className={selected ? '' : 'placeholder'}>{text(selected ? selected.toLocaleDateString(typeof document !== 'undefined' ? document.documentElement.lang : 'en', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Choose a date')}</span><CalendarDays size={16}/></button></Popover.Trigger><Popover.Portal><Popover.Content sideOffset={7} collisionPadding={12} align="start" className="calendar-popover" onEscapeKeyDown={e => e.stopPropagation()}><DayPicker locale={({ ar, de, hi, ml, en: enUS })[locale]} formatters={{ formatCaption: date => date.toLocaleDateString(locale, { month: "long", year: "numeric" }), formatDay: date => new Intl.NumberFormat(locale).format(date.getDate()) }} labels={{ labelPrevious: () => tr('Go to previous month'), labelNext: () => tr('Go to next month'), labelDayButton: (date) => date.toLocaleDateString(locale, { dateStyle: 'full' }) }} mode="single" selected={selected} month={month} onMonthChange={setMonth} onSelect={date => {
+        }}><Popover.Trigger asChild><button type="button" id={id || generated} className={'date-trigger ' + (invalid ? 'invalid' : '')} aria-label={tr(props['aria-label'] || (name === 'date' ? 'Transaction date' : name === 'due' ? 'Due date' : 'Choose date'))} aria-required={required}><span className={selected ? '' : 'placeholder'}>{text(selected ? displayDate(current) : 'Choose a date')}</span><CalendarDays size={16}/></button></Popover.Trigger><Popover.Portal><Popover.Content sideOffset={7} collisionPadding={12} align="start" className="calendar-popover" onEscapeKeyDown={e => e.stopPropagation()}><DayPicker locale={({ ar, de, hi, ml, en: enUS })[locale]} formatters={{ formatCaption: date => date.toLocaleDateString(locale, { month: "long", year: "numeric" }), formatDay: date => new Intl.NumberFormat(locale).format(date.getDate()) }} labels={{ labelPrevious: () => tr('Go to previous month'), labelNext: () => tr('Go to next month'), labelDayButton: (date) => date.toLocaleDateString(locale, { dateStyle: 'full' }) }} mode="single" selected={selected} month={month} onMonthChange={setMonth} onSelect={date => {
             if (date)
                 choose(iso(date));
         }} disabled={[...(min ? [{ before: parse(String(min))! }] : []), ...(max ? [{ after: parse(String(max))! }] : [])]} showOutsideDays fixedWeeks components={{ Chevron: ({ orientation }) => orientation === 'left' ? <ChevronLeft size={17}/> : <ChevronRight size={17}/> }}/><div className="calendar-actions"><button type="button" onClick={() => choose('')}>{tr("Clear")}</button><button type="button" disabled={!!min && iso(new Date()) < String(min) || !!max && iso(new Date()) > String(max)} onClick={() => choose(iso(new Date()))}>{tr("Today")}</button></div><Popover.Arrow className="calendar-arrow"/></Popover.Content></Popover.Portal></Popover.Root>{text(invalid && <small className="date-error">{tr("Choose a date.")}</small>, true)}</span>;

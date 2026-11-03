@@ -915,7 +915,6 @@
   "Default": "Default",
   "View details": "View details",
   "Choose category": "Choose category",
-  "Time (optional)": "Time (optional)",
   "No time": "No time",
   "Please choose one.": "Please choose one.",
   "Choose a category.": "Choose a category.",
@@ -931,5 +930,17 @@
   "You do not have access to this record.": "You do not have access to this record.",
   "Something went wrong on this screen": "Something went wrong on this screen",
   "Your saved data is safe. Try again, or reload the app if this keeps happening.": "Your saved data is safe. Try again, or reload the app if this keeps happening.",
-  "Reload the app": "Reload the app"
+  "Reload the app": "Reload the app",
+  "Date from": "Date from",
+  "Date to": "Date to",
+  "Date to (optional)": "Date to (optional)",
+  "Date and time": "Date and time",
+  "Account and payment": "Account and payment",
+  "Name / description (optional)": "Name / description (optional)",
+  "Save Transaction": "Save Transaction",
+  "Time": "Time",
+  "Hour": "Hour",
+  "Minute": "Minute",
+  "Now": "Now",
+  "Choose a time.": "Choose a time."
 }

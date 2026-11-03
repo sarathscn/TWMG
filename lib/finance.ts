@@ -108,11 +108,14 @@ export function seed(currency='INR'):Data{
 }
 // Transaction filters shared by the Transactions list and Reports. Every set filter must match.
 // "any" for shared/recurring means "linked to any group / any bill".
-export type TxFilters={account?:string;party?:string;category?:string;shared?:string;recurring?:string};
-export const filterKeys=['account','party','category','shared','recurring'] as const;
+export type TxFilters={account?:string;party?:string;category?:string;shared?:string;recurring?:string;from?:string;to?:string};
+export const filterKeys=['from','to','account','party','category','shared','recurring'] as const;
+// One date chosen means that day; two mean the days from one to the other, whichever order they were picked in.
+export function inDateFilter(date:string,from?:string,to?:string){if(!from&&!to)return true;const a=from||to!,b=to||from!;return date>=(a<b?a:b)&&date<=(a<b?b:a)}
 export function activeFilters(f:TxFilters){return filterKeys.filter(k=>!!f[k])}
 export function applyFilters(ts:Transaction[],f:TxFilters){
  return ts.filter(t=>(!f.account||t.account===f.account||t.to===f.account)
+  &&inDateFilter(t.date,f.from,f.to)
   &&(!f.party||t.partyId===f.party)
   &&(!f.category||(t.type!=='transfer'&&(t.splits?.length?t.splits.some(s=>s.category===f.category):t.category===f.category)))
   &&(!f.shared||(f.shared==='any'?!!t.sharedGroupId:t.sharedGroupId===f.shared))

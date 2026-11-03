@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {flowPoints,focusDate,localDate,periodRange,rangeLabel} from '../lib/cash-flow.ts';
-import {newestFirst,totals,validateTransaction} from '../lib/finance.ts';
+import {activeFilters,applyFilters,newestFirst,totals,validateTransaction} from '../lib/finance.ts';
+import {displayDate,displayMoment,localTime} from '../lib/dates.ts';
 import {accountSchema,appearance} from '../lib/record-schemas.ts';
 import {categorySchema,paymentMethodSchema} from '../lib/preferences.ts';
 import {profileDetailsSchema} from '../lib/profile.ts';
@@ -24,12 +25,12 @@ test('Month and Year cover the whole calendar period',()=>{
 test('Each view has the right points and labels',()=>{
  const points=(p:string,m='2026-11')=>{const r=periodRange(p,m,'2026-11-03');return flowPoints([],r.start,r.end,'en-GB')};
  assert.equal(points('Day').length,24,'an empty day has one point per hour');assert.equal(points('Day')[0].name,'00:00');assert.equal(points('Day')[23].name,'23:00');
- assert.equal(points('Week').length,7);assert.equal(points('Week')[0].name,'Wed 28');assert.equal(points('Week')[6].name,'Tue 3');
- assert.equal(points('Month').length,30);assert.equal(points('Month','2024-02').length,29);assert.equal(points('Month')[29].name,'30');
+ assert.equal(points('Week').length,7);assert.equal(points('Week')[0].name,'28/10');assert.equal(points('Week')[6].name,'03/11');
+ assert.equal(points('Month').length,30);assert.equal(points('Month','2024-02').length,29);assert.equal(points('Month')[29].name,'30/11');
  assert.deepEqual(points('Year').map(x=>x.name),['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec']);
- assert.equal(points('Year')[0].label,'January 2026');assert.equal(points('Week')[0].label,'Wed, 28 Oct 2026');
- assert.equal(rangeLabel('2026-11-03','2026-11-03','en-GB'),'3 Nov 2026');
- assert.match(rangeLabel('2026-10-28','2026-11-03','en-GB'),/^28 Oct\s.\s3 Nov 2026$/);
+ assert.equal(points('Year')[0].label,'01/2026');assert.equal(points('Week')[0].label,'28/10/2026');
+ assert.equal(rangeLabel('2026-11-03','2026-11-03'),'03/11/2026');
+ assert.equal(rangeLabel('2026-10-28','2026-11-03'),'28/10/2026 – 03/11/2026');
 });
 test('Point totals add up to the period total, including its first and last day',()=>{
  const rows=[tx('2026-10-31','income',999),tx('2026-11-01','income',100),tx('2026-11-15','expense',40),tx('2026-11-15','expense',2),tx('2026-11-30','expense',8),tx('2026-12-01','expense',999),tx('2026-11-10','transfer',500),tx('2026-11-11','income',70,{partyId:'p'})];
@@ -53,7 +54,7 @@ test('An empty period and a From/To range both draw correctly',()=>{
 });
 test('Dates do not move in far time zones',()=>{
  const old=process.env.TZ;
- try{for(const zone of ['Pacific/Kiritimati','Pacific/Auckland','Pacific/Pago_Pago','Asia/Kolkata']){process.env.TZ=zone;assert.deepEqual(periodRange('Week','2026-11','2026-11-03'),{start:'2026-10-28',end:'2026-11-03'},zone);assert.equal(flowPoints([],'2026-11-03','2026-11-03','en-GB')[0].label,'00:00 · Tue, 3 Nov 2026',zone)}
+ try{for(const zone of ['Pacific/Kiritimati','Pacific/Auckland','Pacific/Pago_Pago','Asia/Kolkata']){process.env.TZ=zone;assert.deepEqual(periodRange('Week','2026-11','2026-11-03'),{start:'2026-10-28',end:'2026-11-03'},zone);assert.equal(flowPoints([],'2026-11-03','2026-11-03','en-GB')[0].label,'00:00 · 03/11/2026',zone)}
  assert.equal(localDate(new Date(Date.UTC(2026,10,3,12))).length,10)}finally{process.env.TZ=old}
 });
 test('The dashboard uses this logic, and tabs leave a picked day',()=>{
@@ -117,7 +118,7 @@ test('Time is stored as a local HH:MM and sorts within a day',()=>{
  assert.deepEqual(order,[3,4,2,1]);
  const route=readFileSync('app/api/finance/route.ts','utf8'),form=readFileSync('app/ui/FinanceApp.tsx','utf8');
  assert.match(route,/time:z\.string\(\)\.regex/,'the server keeps the time');
- assert.match(form,/<input name="time" type="time" defaultValue=\{value\?\.time \|\| ''\}\/>/);
+ assert.ok(form.includes('<TimeField name="time"'));
  assert.match(form,/time: str\('time'\) \|\| undefined/);
 });
 test('A new transaction starts with no account or category, and editing keeps them',()=>{
@@ -133,4 +134,37 @@ test('Dropdowns have a stable first measure and no buttons that mount while scro
  const css=readFileSync('app/globals.css','utf8'),ui=readFileSync('app/ui/Controls.tsx','utf8');
  assert.match(css,/max-height:min\(310px,var\(--radix-select-content-available-height,310px\)\)/);
  assert.ok(!/ScrollUpButton|ScrollDownButton/.test(ui));
+});
+test('Dates read DD/MM/YYYY on screen, and stay ISO underneath',()=>{
+ assert.equal(displayDate('2026-11-03'),'03/11/2026');assert.equal(displayDate(''),'');assert.equal(displayDate(undefined),'');
+ assert.equal(displayMoment(new Date(2026,10,3,9,5)),'03/11/2026 09:05');assert.equal(localTime(new Date(2026,10,3,9,5)),'09:05');
+ const ui=['app/ui/FinanceApp.tsx','app/ui/Controls.tsx','app/ui/AndroidApp.tsx','app/ui/DeviceSecurity.tsx','app/ui/SharedGroups.tsx','app/ui/Preferences.tsx'].map(f=>readFileSync(f,'utf8')).join('');
+ assert.ok(!/day: 'numeric', month: 'short'/.test(ui),'no short date formats left');assert.ok(!/toLocaleString\(\)|toLocaleDateString\(\)/.test(ui));
+});
+test('The date filter takes one day or a range, including both ends',()=>{
+ const rows=['2026-11-01','2026-11-02','2026-11-03','2026-11-04'].map(d=>tx(d,'expense',1));
+ const pick=(f:object)=>applyFilters(rows,f).map(x=>x.date.slice(-2));
+ assert.deepEqual(pick({from:'2026-11-02'}),['02'],'one date means that day');assert.deepEqual(pick({to:'2026-11-03'}),['03']);
+ assert.deepEqual(pick({from:'2026-11-02',to:'2026-11-03'}),['02','03']);assert.deepEqual(pick({from:'2026-11-03',to:'2026-11-02'}),['02','03'],'either order');
+ assert.equal(pick({}).length,4);assert.deepEqual(activeFilters({from:'2026-11-02',category:'x'}),['from','category']);
+});
+test('Add Transaction is one guided flow with no tag field for new records',()=>{
+ const form=readFileSync('app/ui/FinanceApp.tsx','utf8');
+ assert.ok(form.includes("TX_STEPS = ['Transaction for', 'Date and time', 'Account and payment', 'Category', 'Amount', 'Notes']"));
+ assert.ok(form.includes('<label>{tr("Tags")}<input name="tags" defaultValue={value.tags}'),'tags only appear when a record already has them');
+ assert.ok(form.includes("name: str('name').trim() || (type === 'transfer' ? tr('Transfer') : str('category'))"),'a name is never required');
+ assert.ok(form.includes("required={!value?.id}"),'older records can be edited without inventing a time');
+ assert.ok(form.includes("for (const field of box?.querySelectorAll"),'each step checks its own fields');
+});
+test('Overlays: rows highlight whole, and only inputs and interactive parts change selection',()=>{
+ const css=readFileSync('app/globals.css','utf8');
+ assert.ok(css.includes('tr.tx-row:hover>td{background:transparent}'));assert.ok(css.includes('@media(hover:hover){tr.tx-row:hover{background:var(--soft)}}'));
+ assert.ok(!css.includes('.app,.identity-screen{-webkit-user-select:none'),'selection is not disabled globally');
+ assert.match(css,/input,textarea,select,\[contenteditable="true"\]\{-webkit-user-select:text;user-select:text\}/);
+ assert.ok(css.includes('.select-menu[data-state=closed]{animation:none}'));
+});
+test('Dropdown and picker fields do not shrink on press, while other buttons still do',()=>{
+ const css=readFileSync('app/globals.css','utf8');
+ assert.ok(css.includes('.themed-select:active:not(:disabled),.date-trigger:active:not(:disabled),.calendar-label:active:not(:disabled){transform:none}'));
+ assert.ok(css.includes('button:active:not(:disabled){transform:scale(.97)}'),'ordinary buttons keep their press feedback');
 });

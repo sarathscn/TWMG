@@ -915,7 +915,6 @@
   "Default": "डिफ़ॉल्ट",
   "View details": "विवरण देखें",
   "Choose category": "श्रेणी चुनें",
-  "Time (optional)": "समय (वैकल्पिक)",
   "No time": "समय नहीं",
   "Please choose one.": "कृपया एक चुनें।",
   "Choose a category.": "कोई श्रेणी चुनें।",
@@ -931,5 +930,17 @@
   "You do not have access to this record.": "आपके पास इस रिकॉर्ड की पहुँच नहीं है।",
   "Something went wrong on this screen": "इस स्क्रीन पर कुछ गड़बड़ हो गई",
   "Your saved data is safe. Try again, or reload the app if this keeps happening.": "आपका सहेजा गया डेटा सुरक्षित है। फिर कोशिश करें, या बार-बार हो तो ऐप दोबारा लोड करें।",
-  "Reload the app": "ऐप दोबारा लोड करें"
+  "Reload the app": "ऐप दोबारा लोड करें",
+  "Date from": "तारीख से",
+  "Date to": "तारीख तक",
+  "Date to (optional)": "तारीख तक (वैकल्पिक)",
+  "Date and time": "तारीख और समय",
+  "Account and payment": "खाता और भुगतान",
+  "Name / description (optional)": "नाम / विवरण (वैकल्पिक)",
+  "Save Transaction": "लेन-देन सहेजें",
+  "Time": "समय",
+  "Hour": "घंटा",
+  "Minute": "मिनट",
+  "Now": "अभी",
+  "Choose a time.": "समय चुनें।"
 }

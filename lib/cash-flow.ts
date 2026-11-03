@@ -1,4 +1,5 @@
 import {timeOfDay,totals,type Transaction} from './finance';
+import {displayDate} from './dates';
 export type FlowPeriod='Day'|'Week'|'Month'|'Year';
 export type FlowPoint={name:string;label:string;income:number;expense:number};
 // All dates here are plain YYYY-MM-DD strings, worked out in UTC so no time zone can shift a day.
@@ -26,7 +27,7 @@ export function flowPoints(rows:Transaction[],start:string,end:string,locale:str
  if(start>end)return[];
  const fmt=(date:string,options:Intl.DateTimeFormatOptions)=>parse(date).toLocaleDateString(locale,{timeZone:'UTC',...options});
  if(start===end){
-  const day=rows.filter(t=>t.date===start),timed=(t:Transaction)=>!!t.time&&timeOfDay.test(t.time),full=fmt(start,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const day=rows.filter(t=>t.date===start),timed=(t:Transaction)=>!!t.time&&timeOfDay.test(t.time),full=displayDate(start);
   const point=(name:string,label:string,list:Transaction[])=>{const s=totals(list);return{name,label,income:s.income/scale,expense:s.expense/scale}};
   const hours=Array.from({length:24},(_,h)=>{const hh=String(h).padStart(2,'0');return point(hh+':00',hh+':00 · '+full,day.filter(t=>timed(t)&&t.time!.startsWith(hh+':')))});
   const undated=day.filter(t=>!timed(t));
@@ -39,10 +40,10 @@ export function flowPoints(rows:Transaction[],start:string,end:string,locale:str
  const manyYears=start.slice(0,4)!==end.slice(0,4);
  return keys.map(key=>{
   const s=totals(rows.filter(t=>t.date>=start&&t.date<=end&&t.date.startsWith(key)));
-  const name=key.length===7?fmt(key+'-01',manyYears?{month:'short',year:'2-digit'}:{month:'short'}):days<=7?fmt(key,{weekday:'short',day:'numeric'}):fmt(key,{day:'numeric'});
-  const label=key.length===7?fmt(key+'-01',{month:'long',year:'numeric'}):fmt(key,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const name=key.length===7?fmt(key+'-01',manyYears?{month:'short',year:'2-digit'}:{month:'short'}):displayDate(key).slice(0,5);
+  const label=key.length===7?displayDate(key+'-01').slice(3):displayDate(key);
   return{name,label,income:s.income/scale,expense:s.expense/scale};
  });
 }
-// The dates a total covers, in the reader's language: "3 Nov 2026" or "28 Oct – 3 Nov 2026".
-export const rangeLabel=(start:string,end:string,locale:string)=>new Intl.DateTimeFormat(locale,{timeZone:'UTC',day:'numeric',month:'short',year:'numeric'}).formatRange(parse(start),parse(end));
+// The dates a total covers: "03/11/2026" or "28/10/2026 – 03/11/2026".
+export const rangeLabel=(start:string,end:string)=>start===end?displayDate(start):displayDate(start)+' – '+displayDate(end);

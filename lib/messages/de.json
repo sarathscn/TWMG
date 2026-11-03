@@ -915,7 +915,6 @@
   "Default": "Standard",
   "View details": "Details ansehen",
   "Choose category": "Kategorie wählen",
-  "Time (optional)": "Uhrzeit (optional)",
   "No time": "Ohne Uhrzeit",
   "Please choose one.": "Bitte eine Option wählen.",
   "Choose a category.": "Wähle eine Kategorie.",
@@ -931,5 +930,17 @@
   "You do not have access to this record.": "Du hast keinen Zugriff auf diesen Eintrag.",
   "Something went wrong on this screen": "Auf diesem Bildschirm ist etwas schiefgelaufen",
   "Your saved data is safe. Try again, or reload the app if this keeps happening.": "Deine gespeicherten Daten sind sicher. Versuche es erneut oder lade die App neu, falls es wieder passiert.",
-  "Reload the app": "App neu laden"
+  "Reload the app": "App neu laden",
+  "Date from": "Datum von",
+  "Date to": "Datum bis",
+  "Date to (optional)": "Datum bis (optional)",
+  "Date and time": "Datum und Uhrzeit",
+  "Account and payment": "Konto und Zahlung",
+  "Name / description (optional)": "Name / Beschreibung (optional)",
+  "Save Transaction": "Transaktion speichern",
+  "Time": "Uhrzeit",
+  "Hour": "Stunde",
+  "Minute": "Minute",
+  "Now": "Jetzt",
+  "Choose a time.": "Wähle eine Uhrzeit."
 }

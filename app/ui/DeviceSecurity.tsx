@@ -1,4 +1,5 @@
 'use client';
+import { displayMoment } from '../../lib/dates';
 import { Component, useEffect, useState, type ReactNode } from 'react';
 import { BellRing, Fingerprint, KeyRound, Plus} from 'lucide-react';
 import { useI18n } from './UIProvider';
@@ -67,7 +68,7 @@ export function PasskeyManager() {
         await refresh(); setBusy(false);
     }
     return <section className="panel settings-panel passkeys-panel"><h3><KeyRound size={17}/>{tr("Passkeys")}</h3><p>{tr("Sign in with your fingerprint, face or screen lock instead of a password. Your biometrics never leave your device.")}</p>
-        {keys.length ? <ul className="passkey-list">{keys.map(k => <li key={k.id}><span><b>{k.friendly_name || tr('Passkey')}</b><small>{tr("Added ")}{text(new Date(k.created_at).toLocaleDateString())}{k.last_used_at ? ' · ' + tr('Last used ') + new Date(k.last_used_at).toLocaleDateString() : ''}</small></span><button type="button" className="secondary text-danger" disabled={busy} onClick={() => remove(k)}>{tr("Remove")}</button></li>)}</ul> : <p className="muted">{tr("No passkeys yet.")}</p>}
+        {keys.length ? <ul className="passkey-list">{keys.map(k => <li key={k.id}><span><b>{k.friendly_name || tr('Passkey')}</b><small>{tr("Added ")}{text(displayMoment(k.created_at).slice(0, 10))}{k.last_used_at ? ' · ' + tr('Last used ') + displayMoment(k.last_used_at).slice(0, 10) : ''}</small></span><button type="button" className="secondary text-danger" disabled={busy} onClick={() => remove(k)}>{tr("Remove")}</button></li>)}</ul> : <p className="muted">{tr("No passkeys yet.")}</p>}
         <button type="button" className="secondary" disabled={busy} onClick={add}><Plus size={16}/>{tr("Add a passkey")}</button>{text(message && <p className="form-help" role="status">{text(message, true)}</p>, true)}</section>;
 }
 // Android-only settings: biometric app lock and local bill reminders.
