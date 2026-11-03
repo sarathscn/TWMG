@@ -913,5 +913,12 @@
   "Change color": "रंग बदलें",
   "Use default color": "डिफ़ॉल्ट रंग उपयोग करें",
   "Default": "डिफ़ॉल्ट",
-  "View details": "विवरण देखें"
+  "View details": "विवरण देखें",
+  "Choose category": "श्रेणी चुनें",
+  "Time (optional)": "समय (वैकल्पिक)",
+  "No time": "समय नहीं",
+  "Please choose one.": "कृपया एक चुनें।",
+  "Choose a category.": "कोई श्रेणी चुनें।",
+  "Choose an account.": "कोई खाता चुनें।",
+  "Choose a valid time.": "मान्य समय चुनें।"
 }

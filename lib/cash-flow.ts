@@ -1,4 +1,4 @@
-import {totals,type Transaction} from './finance';
+import {timeOfDay,totals,type Transaction} from './finance';
 export type FlowPeriod='Day'|'Week'|'Month'|'Year';
 export type FlowPoint={name:string;label:string;income:number;expense:number};
 // All dates here are plain YYYY-MM-DD strings, worked out in UTC so no time zone can shift a day.
@@ -20,10 +20,18 @@ export function periodRange(period:string,month:string,today:string,picked=''){
  if(period==='Year')return{start:month.slice(0,4)+'-01-01',end:month.slice(0,4)+'-12-31'};
  return{start:month+'-01',end:monthEnd(month)};
 }
-// The chart's points follow the range itself, so a From/To range draws as correctly as a tab: a point per day up to two months, then a point per month.
-export function flowPoints(rows:Transaction[],start:string,end:string,locale:string,scale=1):FlowPoint[]{
+// The chart's points follow the range itself, so a From/To range draws as correctly as a tab: a point per hour for one day, a point per day up to two months, then a point per month.
+// Older entries have no time, so a single day shows them on their own "No time" point rather than at an hour they may not have happened.
+export function flowPoints(rows:Transaction[],start:string,end:string,locale:string,scale=1,noTime='No time'):FlowPoint[]{
  if(start>end)return[];
  const fmt=(date:string,options:Intl.DateTimeFormatOptions)=>parse(date).toLocaleDateString(locale,{timeZone:'UTC',...options});
+ if(start===end){
+  const day=rows.filter(t=>t.date===start),timed=(t:Transaction)=>!!t.time&&timeOfDay.test(t.time),full=fmt(start,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const point=(name:string,label:string,list:Transaction[])=>{const s=totals(list);return{name,label,income:s.income/scale,expense:s.expense/scale}};
+  const hours=Array.from({length:24},(_,h)=>{const hh=String(h).padStart(2,'0');return point(hh+':00',hh+':00 · '+full,day.filter(t=>timed(t)&&t.time!.startsWith(hh+':')))});
+  const undated=day.filter(t=>!timed(t));
+  return undated.length?[point(noTime,noTime+' · '+full,undated),...hours]:hours;
+ }
  const days=Math.round((parse(end).getTime()-parse(start).getTime())/864e5)+1;
  const keys:string[]=[];
  if(days<=62)for(let i=0;i<days;i++)keys.push(shift(start,i));
@@ -31,7 +39,7 @@ export function flowPoints(rows:Transaction[],start:string,end:string,locale:str
  const manyYears=start.slice(0,4)!==end.slice(0,4);
  return keys.map(key=>{
   const s=totals(rows.filter(t=>t.date>=start&&t.date<=end&&t.date.startsWith(key)));
-  const name=key.length===7?fmt(key+'-01',manyYears?{month:'short',year:'2-digit'}:{month:'short'}):days===1?fmt(key,{day:'numeric',month:'short'}):days<=7?fmt(key,{weekday:'short',day:'numeric'}):fmt(key,{day:'numeric'});
+  const name=key.length===7?fmt(key+'-01',manyYears?{month:'short',year:'2-digit'}:{month:'short'}):days<=7?fmt(key,{weekday:'short',day:'numeric'}):fmt(key,{day:'numeric'});
   const label=key.length===7?fmt(key+'-01',{month:'long',year:'numeric'}):fmt(key,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   return{name,label,income:s.income/scale,expense:s.expense/scale};
  });

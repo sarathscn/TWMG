@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {flowPoints,focusDate,localDate,periodRange,rangeLabel} from '../lib/cash-flow.ts';
-import {totals} from '../lib/finance.ts';
+import {newestFirst,totals,validateTransaction} from '../lib/finance.ts';
 import {accountSchema,appearance} from '../lib/record-schemas.ts';
 import {categorySchema,paymentMethodSchema} from '../lib/preferences.ts';
 import {profileDetailsSchema} from '../lib/profile.ts';
@@ -23,7 +23,7 @@ test('Month and Year cover the whole calendar period',()=>{
 });
 test('Each view has the right points and labels',()=>{
  const points=(p:string,m='2026-11')=>{const r=periodRange(p,m,'2026-11-03');return flowPoints([],r.start,r.end,'en-GB')};
- assert.equal(points('Day').length,1);assert.equal(points('Day')[0].name,'3 Nov');
+ assert.equal(points('Day').length,24,'an empty day has one point per hour');assert.equal(points('Day')[0].name,'00:00');assert.equal(points('Day')[23].name,'23:00');
  assert.equal(points('Week').length,7);assert.equal(points('Week')[0].name,'Wed 28');assert.equal(points('Week')[6].name,'Tue 3');
  assert.equal(points('Month').length,30);assert.equal(points('Month','2024-02').length,29);assert.equal(points('Month')[29].name,'30');
  assert.deepEqual(points('Year').map(x=>x.name),['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec']);
@@ -53,7 +53,7 @@ test('An empty period and a From/To range both draw correctly',()=>{
 });
 test('Dates do not move in far time zones',()=>{
  const old=process.env.TZ;
- try{for(const zone of ['Pacific/Kiritimati','Pacific/Auckland','Pacific/Pago_Pago','Asia/Kolkata']){process.env.TZ=zone;assert.deepEqual(periodRange('Week','2026-11','2026-11-03'),{start:'2026-10-28',end:'2026-11-03'},zone);assert.equal(flowPoints([],'2026-11-03','2026-11-03','en-GB')[0].name,'3 Nov',zone)}
+ try{for(const zone of ['Pacific/Kiritimati','Pacific/Auckland','Pacific/Pago_Pago','Asia/Kolkata']){process.env.TZ=zone;assert.deepEqual(periodRange('Week','2026-11','2026-11-03'),{start:'2026-10-28',end:'2026-11-03'},zone);assert.equal(flowPoints([],'2026-11-03','2026-11-03','en-GB')[0].label,'00:00 · Tue, 3 Nov 2026',zone)}
  assert.equal(localDate(new Date(Date.UTC(2026,10,3,12))).length,10)}finally{process.env.TZ=old}
 });
 test('The dashboard uses this logic, and tabs leave a picked day',()=>{
@@ -98,4 +98,39 @@ test('Forms have one solid surface, and shared groups open from a box',()=>{
  assert.match(groups,/open \? groups\.length > 0 && <div className="account-grid">/);
  assert.match(groups,/<button className="ledger-title" onClick=\{\(\) => open\(group\.id\)\}/);
  assert.match(profiles,/className="appearance-picker"><ColorPicker[^>]*\/><IconPicker/,'colour and icon sit together');
+});
+test('A day charts entries at their saved time, and older entries on their own point',()=>{
+ const rows=[tx('2026-11-03','expense',10,{time:'00:00'}),tx('2026-11-03','expense',20,{time:'09:59'}),tx('2026-11-03','income',70,{time:'09:00'}),tx('2026-11-03','expense',40,{time:'23:59'}),tx('2026-11-03','expense',5),tx('2026-11-03','expense',6,{time:'bad'}),tx('2026-11-02','expense',999,{time:'09:00'})];
+ const p=flowPoints(rows,'2026-11-03','2026-11-03','en-GB');
+ assert.equal(p.length,25);assert.equal(p[0].name,'No time');assert.equal(p[0].expense,11,'no time and an unreadable time');
+ assert.equal(p[1].expense,10);assert.equal(p[10].name,'09:00');assert.equal(p[10].expense,20);assert.equal(p[10].income,70);assert.equal(p[24].expense,40);
+ assert.equal(p.reduce((n,x)=>n+x.expense,0),totals(rows.filter(r=>r.date==='2026-11-03')).expense,'the total never changes');
+ assert.equal(flowPoints(rows,'2026-11-03','2026-11-03','en-GB',1,'Sin hora')[0].name,'Sin hora');
+ const week=flowPoints(rows,'2026-11-02','2026-11-03','en-GB');assert.equal(week.length,2);assert.equal(week[1].expense,totals(rows.filter(r=>r.date==='2026-11-03')).expense,'other views ignore the time');
+});
+test('Time is stored as a local HH:MM and sorts within a day',()=>{
+ const account={id:'a',name:'A',type:'Bank account',currency:'INR',opening:0} as any,base=tx('2026-11-03','expense',5);
+ assert.doesNotThrow(()=>validateTransaction(base,[account]),'older records stay valid');
+ assert.doesNotThrow(()=>validateTransaction({...base,time:'23:59'},[account]));
+ for(const bad of ['24:00','9:00','12:60','','noon'])assert.throws(()=>validateTransaction({...base,time:bad},[account]),bad);
+ const order=[tx('2026-11-03','expense',1),tx('2026-11-03','expense',2,{time:'08:00'}),tx('2026-11-04','expense',3),tx('2026-11-03','expense',4,{time:'18:30'})].sort(newestFirst).map(x=>x.amount);
+ assert.deepEqual(order,[3,4,2,1]);
+ const route=readFileSync('app/api/finance/route.ts','utf8'),form=readFileSync('app/ui/FinanceApp.tsx','utf8');
+ assert.match(route,/time:z\.string\(\)\.regex/,'the server keeps the time');
+ assert.match(form,/<input name="time" type="time" defaultValue=\{value\?\.time \|\| ''\}\/>/);
+ assert.match(form,/time: str\('time'\) \|\| undefined/);
+});
+test('A new transaction starts with no account or category, and editing keeps them',()=>{
+ const form=readFileSync('app/ui/FinanceApp.tsx','utf8');
+ assert.match(form,/\[fromId, setFromId\] = useState\(value\?\.account \|\| ''\), \[toId, setToId\] = useState\(value\?\.to \|\| ''\)/);
+ assert.match(form,/category\('category', value\?\.category, true\)/);
+ assert.match(form,/defaultValue=\{initial \|\| \(blank \? '' : editorCategories\[0\] \|\| 'Other'\)\}/);
+ assert.match(form,/throw Error\('Choose an account\.'\)/);assert.match(form,/throw Error\('Choose a category\.'\)/);
+ assert.match(form,/category: type === 'transfer' \? value\?\.category \|\| 'Other' : str\('category'\)/);
+ assert.ok(!/toISOString\(\)\.slice\(0, 10\)\}\/>/.test(form),'the default date is local, not UTC');
+});
+test('Dropdowns have a stable first measure and no buttons that mount while scrolling',()=>{
+ const css=readFileSync('app/globals.css','utf8'),ui=readFileSync('app/ui/Controls.tsx','utf8');
+ assert.match(css,/max-height:min\(310px,var\(--radix-select-content-available-height,310px\)\)/);
+ assert.ok(!/ScrollUpButton|ScrollDownButton/.test(ui));
 });

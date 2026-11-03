@@ -4,7 +4,7 @@ export function accountReference(a:Pick<Account,'type'|'institution'|'lastFour'|
 // sharedGroupIds: the split groups this person is a member of (kept in sync by the server).
 // autoCreated: the party was added by a group, so it can be removed with its last group.
 export type Party={id:string;name:string;notes?:string;color?:string;emoji?:string;sharedGroupIds?:string[];autoCreated?:boolean};
-export type Transaction={id:string;name:string;type:'income'|'expense'|'transfer';amount:number;account:string;to?:string;received?:number;category:string;date:string;partyId?:string;debtAction?:'lend'|'borrow'|'collect'|'repay';sharedGroupId?:string;recurringId?:string;paidBy?:string;participants?:string[];paymentMethod?:string;paymentMethodName?:string;notes?:string;tags?:string;splits?:{category:string;amount:number}[]};
+export type Transaction={id:string;name:string;type:'income'|'expense'|'transfer';amount:number;account:string;to?:string;received?:number;category:string;date:string;time?:string;partyId?:string;debtAction?:'lend'|'borrow'|'collect'|'repay';sharedGroupId?:string;recurringId?:string;paidBy?:string;participants?:string[];paymentMethod?:string;paymentMethodName?:string;notes?:string;tags?:string;splits?:{category:string;amount:number}[]};
 export type SharedExpense={id:string;name:string;amount:number;date:string;paidBy:string;notes?:string;participants?:string[];transactionId?:string};
 // self: the member name that stands for the signed-in user in a shared group.
 export type Item={id:string;name:string;amount:number;target?:number;category?:string;due?:string;type?:string;paid?:number;party?:string;members?:number;status?:string;expenses?:SharedExpense[];memberNames?:string[];self?:string;color?:string;emoji?:string};
@@ -82,11 +82,16 @@ export function overdrawn(accounts:Account[],before:Transaction[],after:Transact
 export function categoryRenameUpdates(data:Pick<Data,'budgets'|'recurring'>,from:string,to:string){if(from===to)return [];return [...data.budgets.map(r=>({kind:'budgets' as const,r})),...data.recurring.map(r=>({kind:'recurring' as const,r}))].filter(({r})=>r.category===from).map(({kind,r})=>({kind,value:{...r,category:to,...(kind==='budgets'&&r.name===from?{name:to}:{})}}))}
 export function totals(ts:Transaction[]){return ts.reduce((s,t)=>({income:s.income+(t.type==='income'&&!t.partyId?t.amount:0),expense:s.expense+(t.type==='expense'&&!t.partyId?t.amount:0)}),{income:0,expense:0})}
 export function partyBalance(id:string,ts:Transaction[]){return ts.filter(t=>t.partyId===id).reduce((s,t)=>s+(['lend','repay'].includes(t.debtAction||'')?t.amount:-t.amount),0)}
-export function linkedTransactions(kind:LedgerKind,id:string,ts:Transaction[]){return ts.filter(t=>kind==='accounts'?(t.account===id||t.to===id):kind==='parties'?t.partyId===id:kind==='shared'?t.sharedGroupId===id:t.recurringId===id).sort((a,b)=>b.date.localeCompare(a.date))}
+export function linkedTransactions(kind:LedgerKind,id:string,ts:Transaction[]){return ts.filter(t=>kind==='accounts'?(t.account===id||t.to===id):kind==='parties'?t.partyId===id:kind==='shared'?t.sharedGroupId===id:t.recurringId===id).sort(newestFirst)}
+// A transaction's optional time of day: local wall-clock HH:MM, stored beside its date, which is also local.
+export const timeOfDay=/^([01]\d|2[0-3]):[0-5]\d$/;
+// Latest first. On the same day, entries with a time come before entries without one.
+export const newestFirst=(a:Pick<Transaction,'date'|'time'>,b:Pick<Transaction,'date'|'time'>)=>b.date.localeCompare(a.date)||(b.time||'').localeCompare(a.time||'');
 export function validateTransaction(t:Transaction,accounts:Account[]){
  if(!Number.isSafeInteger(t.amount)||t.amount<=0)throw Error('Enter a positive amount in the account currency.');
  if(!accounts.some(a=>a.id===t.account))throw Error('Choose an account in this profile.');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(t.date)||Number.isNaN(Date.parse(t.date))||new Date(t.date).toISOString().slice(0,10)!==t.date)throw Error('Choose a valid date.');
+ if(t.time!==undefined&&!timeOfDay.test(t.time))throw Error('Choose a valid time.');
  if(t.type==='transfer'){
   const a=accounts.find(a=>a.id===t.account),b=accounts.find(a=>a.id===t.to);
   if(!b||a?.id===b.id)throw Error('Choose a different destination account.');

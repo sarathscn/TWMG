@@ -913,5 +913,12 @@
   "Change color": "تغيير اللون",
   "Use default color": "استخدام اللون الافتراضي",
   "Default": "افتراضي",
-  "View details": "عرض التفاصيل"
+  "View details": "عرض التفاصيل",
+  "Choose category": "اختر الفئة",
+  "Time (optional)": "الوقت (اختياري)",
+  "No time": "بدون وقت",
+  "Please choose one.": "يرجى اختيار واحد.",
+  "Choose a category.": "اختر فئة.",
+  "Choose an account.": "اختر حسابًا.",
+  "Choose a valid time.": "اختر وقتًا صالحًا."
 }

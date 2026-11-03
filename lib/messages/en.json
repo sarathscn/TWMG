@@ -913,5 +913,12 @@
   "Change color": "Change color",
   "Use default color": "Use default color",
   "Default": "Default",
-  "View details": "View details"
+  "View details": "View details",
+  "Choose category": "Choose category",
+  "Time (optional)": "Time (optional)",
+  "No time": "No time",
+  "Please choose one.": "Please choose one.",
+  "Choose a category.": "Choose a category.",
+  "Choose an account.": "Choose an account.",
+  "Choose a valid time.": "Choose a valid time."
 }

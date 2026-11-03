@@ -913,5 +913,12 @@
   "Change color": "നിറം മാറ്റുക",
   "Use default color": "സ്ഥിര നിറം ഉപയോഗിക്കുക",
   "Default": "സ്ഥിരം",
-  "View details": "വിശദാംശങ്ങൾ കാണുക"
+  "View details": "വിശദാംശങ്ങൾ കാണുക",
+  "Choose category": "വിഭാഗം തിരഞ്ഞെടുക്കുക",
+  "Time (optional)": "സമയം (ഐച്ഛികം)",
+  "No time": "സമയമില്ല",
+  "Please choose one.": "ദയവായി ഒന്ന് തിരഞ്ഞെടുക്കുക.",
+  "Choose a category.": "ഒരു വിഭാഗം തിരഞ്ഞെടുക്കുക.",
+  "Choose an account.": "ഒരു അക്കൗണ്ട് തിരഞ്ഞെടുക്കുക.",
+  "Choose a valid time.": "സാധുവായ സമയം തിരഞ്ഞെടുക്കുക."
 }

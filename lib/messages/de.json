@@ -913,5 +913,12 @@
   "Change color": "Farbe ändern",
   "Use default color": "Standardfarbe verwenden",
   "Default": "Standard",
-  "View details": "Details ansehen"
+  "View details": "Details ansehen",
+  "Choose category": "Kategorie wählen",
+  "Time (optional)": "Uhrzeit (optional)",
+  "No time": "Ohne Uhrzeit",
+  "Please choose one.": "Bitte eine Option wählen.",
+  "Choose a category.": "Wähle eine Kategorie.",
+  "Choose an account.": "Wähle ein Konto.",
+  "Choose a valid time.": "Wähle eine gültige Uhrzeit."
 }
