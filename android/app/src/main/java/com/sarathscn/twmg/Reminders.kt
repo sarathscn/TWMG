@@ -209,6 +209,8 @@ class RescheduleReceiver : BroadcastReceiver() {
         if (intent.action in setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_DATE_CHANGED)) {
             Reminders.schedule(context)
             Reminders.requestSync(context, null)
+            // The widgets' "today" and month depend on the clock.
+            Widgets.refreshAll(context)
         }
     }
 }

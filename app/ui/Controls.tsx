@@ -59,15 +59,18 @@ export function TimeField({ name, defaultValue, required, 'aria-label': label }:
     return <span className="date-field"><input className="control-validation" tabIndex={-1} aria-hidden="true" type="text" name={name} value={value} onChange={() => { }} required={required} onInvalid={e => { e.preventDefault(); setInvalid(true); setOpen(true); }}/><Popover.Root open={open} onOpenChange={setOpen}><Popover.Trigger asChild><button type="button" className={'date-trigger ' + (invalid ? 'invalid' : '')} aria-label={tr(label || 'Time') + (value ? ' ' + value : '')} aria-required={required}><span className={value ? '' : 'placeholder'}>{value || '--:--'}</span><Clock size={16}/></button></Popover.Trigger><Popover.Portal><Popover.Content sideOffset={7} collisionPadding={12} align="start" className="calendar-popover time-popover" onEscapeKeyDown={e => e.stopPropagation()}><div className="time-columns" ref={panel}><div role="group" aria-label={tr('Hour')}>{HOURS.map(h => <button type="button" key={h} aria-pressed={h === hour} onClick={() => put(h + ':' + (minute || '00'))}>{h}</button>)}</div><div role="group" aria-label={tr('Minute')}>{MINUTES.map(m => <button type="button" key={m} aria-pressed={m === minute} onClick={() => { put((hour || '00') + ':' + m); setOpen(false); }}>{m}</button>)}</div></div><div className="calendar-actions"><button type="button" onClick={() => { put(''); setOpen(false); }}>{tr('Clear')}</button><button type="button" onClick={() => { put(localTime()); setOpen(false); }}>{tr('Now')}</button></div></Popover.Content></Popover.Portal></Popover.Root>{invalid && <small className="date-error">{tr('Choose a time.')}</small>}</span>;
 }
 export type CalendarMarker = { date: string; kind: 'transaction' | 'recurring' | 'credit-card' | 'debt' };
-export function DashboardCalendar({ month, selected, markers, onMonthChange, onSelect }: {
+export function DashboardCalendar({ month, selected, markers, onMonthChange, onSelect, openRequest = 0 }: {
     month: string;
     selected?: string;
     markers: CalendarMarker[];
     onMonthChange: (month: string) => void;
     onSelect: (date: string) => void;
+    // Goes up each time a shortcut or widget asks for the calendar.
+    openRequest?: number;
 }) {
     const { tr, text, locale } = useI18n();
     const [open, setOpen] = useState(false), [visibleMonth, setVisibleMonth] = useState(parse(`${month}-01`) || new Date());
+    useEffect(() => { if (openRequest) setOpen(true); }, [openRequest]);
     useEffect(() => {
         const next = parse(`${month}-01`);
         if (next)

@@ -4,6 +4,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {ServiceError,databaseFailure,fetchAll,isAuthOutage} from '../lib/api-errors.ts';
 import {ApiError,financeRequest} from '../lib/api-client.ts';
 import {translateMessage} from '../lib/localization.ts';
+import {openDecision,readOpenTarget,widgetState} from '../lib/app-links.ts';
 test('Database errors: rule messages reach the reader, internals and outages do not',()=>{
  assert.equal(databaseFailure({code:'23514',message:"This would take Cash below zero. Cash and wallet balances can't be negative."}).message.startsWith('This would take'),true);
  assert.equal(databaseFailure({code:'P0001',message:'A record cannot change type.'}).message,'A record cannot change type.');
@@ -61,4 +62,26 @@ test('Long lists draw in steps, and printed reports get every row',()=>{
 test('Server failure messages have real translations, not the "check the fields" fallback',()=>{
  for(const message of [new ServiceError().message,databaseFailure({code:'23505',message:'violates x'}).message,databaseFailure({code:'42501',message:'x'}).message,"Can't reach the server. Check your connection and retry.",'The server took too long to respond. Please retry.','The request could not be processed.','TWMG is temporarily unavailable. Please try again shortly.'])
   for(const locale of ['hi','ar','ml','de']){const out=translateMessage(locale,message);assert.notEqual(out,message,locale+': '+message);assert.notEqual(out,translateMessage(locale,'Check the highlighted fields and try again.'),locale+': '+message);}
+});
+test('Shortcuts and widgets only reach known places, and wait for sign-in and setup',()=>{
+ assert.equal(readOpenTarget('?open=calendar'),'calendar');assert.equal(readOpenTarget('?open=delete-everything'),null);assert.equal(readOpenTarget(''),null);
+ assert.equal(openDecision('add-transaction',{ready:false,accounts:3,profiles:1}),'wait','signed out or choosing a profile');
+ assert.equal(openDecision('add-transaction',{ready:true,accounts:0,profiles:1}),'needs-account');
+ assert.equal(openDecision('calendar',{ready:true,accounts:0,profiles:1}),'open');assert.equal(openDecision('switch-profile',{ready:true,accounts:0,profiles:1}),'open');
+});
+test('Widgets get counts and a profile name, never amounts or descriptions',()=>{
+ const rows=[{date:'2026-11-03',amount:999,name:'Secret rent',notes:'private'},{date:'2026-11-03',amount:1},{date:'2026-10-31'},{date:'2026-12-01'},{date:'2026-09-30'},{date:'2027-01-01'}] as {date:string}[];
+ const s=widgetState({signedIn:true,profile:{name:'Family',color:'#2d6048'},transactions:rows,today:'2026-11-03'});
+ assert.deepEqual(s,{signedIn:true,profile:'Family',color:'#2d6048',days:{'2026-11-03':2,'2026-10-31':1,'2026-12-01':1}});
+ assert.ok(!/Secret|private|999/.test(JSON.stringify(s)));
+ assert.deepEqual(widgetState({signedIn:false,profile:{name:'Family'},transactions:rows,today:'2026-11-03'}),{signedIn:false});
+ assert.equal(Object.keys((widgetState({signedIn:true,profile:{name:'A'},transactions:[{date:'2027-01-05'}],today:'2026-12-31'}) as {days:object}).days).length,1,'crosses a year');
+});
+test('The hold gesture is off by default and never changes a normal tap',()=>{
+ const ui=readFileSync('app/ui/FinanceApp.tsx','utf8'),dev=readFileSync('app/ui/DeviceSecurity.tsx','utf8');
+ assert.ok(dev.includes("localStorage.getItem('twmg-quick-actions') === '1'"));
+ assert.ok(ui.includes('if (!quickOn) return;'));assert.ok(ui.includes("if (quickHeld.current) { quickHeld.current = false; return; } setModal({ kind: 'transactions' });"));
+});
+test('Signing out always reaches the widgets, even though the summary reads the same before sign-in is known',()=>{
+ assert.ok(readFileSync('app/ui/FinanceApp.tsx','utf8').includes("callNative('updateWidgets', widgetSummary); }, [widgetSummary, signedOut]);"));
 });

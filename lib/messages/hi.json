@@ -942,5 +942,9 @@
   "Hour": "घंटा",
   "Minute": "मिनट",
   "Now": "अभी",
-  "Choose a time.": "समय चुनें।"
+  "Choose a time.": "समय चुनें।",
+  "Quick actions": "त्वरित क्रियाएँ",
+  "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.": "Add transaction या Calendar चुनने के लिए नीचे की पट्टी में + बटन दबाकर रखें। यह डिफ़ॉल्ट रूप से बंद है, ताकि लंबे दबाव से कुछ अनचाहा न हो।",
+  "Transaction calendar": "लेन-देन कैलेंडर",
+  "Add an account first, then you can record transactions.": "पहले एक खाता जोड़ें, फिर आप लेन-देन दर्ज कर सकते हैं।"
 }

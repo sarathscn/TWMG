@@ -11,6 +11,7 @@ type AndroidBridge = {
     startupStage(stage: string): void;
     startupReady(outcome: string): void;
     setAppTheme(dark: boolean): void;
+    updateWidgets(json: string): void;
     appLockAvailable(): boolean;
     appLockEnabled(): boolean;
     setAppLockEnabled(enabled: boolean): void;
@@ -29,6 +30,9 @@ type AndroidBridge = {
     hasSession(): boolean;
     appVersion(): string;
 };
+// Optional, per device: holding the + button offers Add transaction or Calendar. Announces itself so the bar follows.
+export const quickActionsOn = () => { try { return localStorage.getItem('twmg-quick-actions') === '1'; } catch { return false; } };
+export function setQuickActions(on: boolean) { try { localStorage.setItem('twmg-quick-actions', on ? '1' : '0'); } catch { /* stays off */ } window.dispatchEvent(new Event('twmg-quick-actions')); }
 // True only inside the TWMG Android app build that has the offline queue.
 export const isAndroidApp = () => typeof bridge()?.queueAdd === 'function';
 const bridge = () => (typeof window !== 'undefined' ? (window as unknown as { TWMGAndroid?: Partial<AndroidBridge> }).TWMGAndroid : undefined);
@@ -74,9 +78,10 @@ export function PasskeyManager() {
 // Android-only settings: biometric app lock and local bill reminders.
 export function DeviceSettings() {
     const { tr } = useI18n();
-    const [ready, setReady] = useState(false), [lockAvailable, setLockAvailable] = useState(false), [lock, setLock] = useState(false), [reminders, setReminders] = useState(false);
+    const [ready, setReady] = useState(false), [lockAvailable, setLockAvailable] = useState(false), [lock, setLock] = useState(false), [reminders, setReminders] = useState(false), [quick, setQuick] = useState(false);
     useEffect(() => {
         if (!hasDeviceFeatures()) return;
+        setQuick(quickActionsOn());
         setReady(true); setLockAvailable(!!callNative('appLockAvailable')); setLock(!!callNative('appLockEnabled')); setReminders(!!callNative('remindersEnabled'));
         // Native confirms changes after the biometric prompt or permission dialog.
         const onNative = (e: Event) => { const d = (e as CustomEvent).detail || {}; if (d.type === 'appLock') setLock(!!d.enabled); if (d.type === 'reminders') setReminders(!!d.enabled); };
@@ -86,6 +91,7 @@ export function DeviceSettings() {
     if (!ready) return null;
     return <section className="panel settings-panel device-panel"><h3>{tr("This device")}</h3>
         <label className="device-toggle"><span><Fingerprint size={18}/><span><b>{tr("App lock")}</b><small>{tr(lockAvailable ? 'Unlock TWMG with your fingerprint, face or screen lock.' : 'Set up a fingerprint, face or screen lock on this phone to use App lock.')}</small></span></span><input type="checkbox" role="switch" checked={lock} disabled={!lockAvailable} onChange={e => callNative('setAppLockEnabled', e.target.checked)}/></label>
+        <label className="device-toggle"><span><Plus size={18}/><span><b>{tr('Quick actions')}</b><small>{tr('Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.')}</small></span></span><input type="checkbox" role="switch" checked={quick} onChange={e => { setQuick(e.target.checked); setQuickActions(e.target.checked); }}/></label>
         <label className="device-toggle"><span><BellRing size={18}/><span><b>{tr("Bill reminders")}</b><small>{tr("Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.")}</small></span></span><input type="checkbox" role="switch" checked={reminders} onChange={e => callNative('setRemindersEnabled', e.target.checked)}/></label>
     </section>;
 }

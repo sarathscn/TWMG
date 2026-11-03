@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon. Each one opens the app at /?open=<id>; the app handles sign-in and setup first. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="add-transaction" android:enabled="true" android:icon="@drawable/ic_shortcut_add" android:shortcutShortLabel="@string/shortcut_add" android:shortcutLongLabel="@string/shortcut_add_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.sarathscn.twmg" android:targetClass="com.sarathscn.twmg.MainActivity" android:data="https://twmg.vercel.app/?open=add-transaction" />
+    </shortcut>
+    <shortcut android:shortcutId="calendar" android:enabled="true" android:icon="@drawable/ic_shortcut_calendar" android:shortcutShortLabel="@string/shortcut_calendar" android:shortcutLongLabel="@string/shortcut_calendar_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.sarathscn.twmg" android:targetClass="com.sarathscn.twmg.MainActivity" android:data="https://twmg.vercel.app/?open=calendar" />
+    </shortcut>
+    <shortcut android:shortcutId="switch-profile" android:enabled="true" android:icon="@drawable/ic_shortcut_profiles" android:shortcutShortLabel="@string/shortcut_profile" android:shortcutLongLabel="@string/shortcut_profile_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.sarathscn.twmg" android:targetClass="com.sarathscn.twmg.MainActivity" android:data="https://twmg.vercel.app/?open=switch-profile" />
+    </shortcut>
+</shortcuts>

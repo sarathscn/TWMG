@@ -42,6 +42,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -107,9 +108,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Hands the system launch screen over to the first frame of StartupView, which matches it.
         installSplashScreen().setOnExitAnimationListener { splash ->
-            if (ValueAnimator.areAnimatorsEnabled()) splash.view.animate().alpha(0f).setDuration(160).withEndAction { splash.remove() }.start() else splash.remove()
+            // Removing the splash puts the theme's system bar settings back, which undoes edge to edge:
+            // white status icons on a light page, a black band at the top and extra padding. Set them again.
+            val done = { splash.remove(); applySystemBars() }
+            if (ValueAnimator.areAnimatorsEnabled()) splash.view.animate().alpha(0f).setDuration(160).withEndAction { done() }.start() else done()
         }
-        enableEdgeToEdge()
+        applySystemBars()
         super.onCreate(savedInstanceState)
         // One prompt for the activity's lifetime, created in onCreate as the biometric library requires.
         prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
@@ -165,6 +169,13 @@ class MainActivity : AppCompatActivity() {
         targetUrl = startUrl(intent)
         if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) web.loadUrl(targetUrl)
         if (isLockOn()) lock()
+    }
+
+    /** Edge to edge, with status and navigation icons that suit the theme chosen in the app. */
+    private fun applySystemBars() {
+        val style = if (startupIsDark()) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        window.decorView.findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0)?.let { ViewCompat.requestApplyInsets(it) }
     }
 
     // ---- Startup screen ---------------------------------------------------------------------
@@ -240,7 +251,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf(::isAppUrl)?.let { targetUrl = it.toString(); if (webAlive) web.loadUrl(targetUrl) }
+        val uri = intent.data?.takeIf(::isAppUrl) ?: return
+        // A shortcut or widget tapped while the app is showing: open it there, without a reload that would lose the screen.
+        val open = uri.getQueryParameter("open")
+        if (WidgetRules.isOpenTarget(open) && webAlive && !startup.covering && onAppPage) { web.evaluateJavascript("window.dispatchEvent(new CustomEvent('twmg-native',{detail:{type:'open',target:'$open'}}))", null); return }
+        targetUrl = uri.toString()
+        if (webAlive) web.loadUrl(targetUrl)
     }
 
     // Pause WebView work while the app isn't visible (battery), and re-lock after 30 s away.
@@ -441,7 +457,7 @@ class MainActivity : AppCompatActivity() {
         /** The app screen has something to show: data, the sign-in screen, or its own error with a retry. */
         @JavascriptInterface fun startupReady(outcome: String) = safe(Unit) { runOnUiThread { dispatch(Event.WebReady(signedOut = outcome == "signed-out")) } }
         /** Remembers the theme chosen in the app, so the next startup screen opens in it. */
-        @JavascriptInterface fun setAppTheme(dark: Boolean) = safe(Unit) { prefs.edit().putBoolean(KEY_DARK, dark).apply() }
+        @JavascriptInterface fun setAppTheme(dark: Boolean) = safe(Unit) { prefs.edit().putBoolean(KEY_DARK, dark).apply(); runOnUiThread { applySystemBars() } }
 
         @JavascriptInterface fun appLockAvailable(): Boolean = safe(false) { canUseLock() }
         @JavascriptInterface fun appLockEnabled(): Boolean = safe(false) { isLockOn() }
@@ -454,6 +470,7 @@ class MainActivity : AppCompatActivity() {
                     notifyWeb("appLock", isLockOn())
                     authenticate(getString(if (enabled) R.string.enable_lock_title else R.string.disable_lock_title)) {
                         prefs.edit().putBoolean(KEY_APP_LOCK, enabled).apply()
+                        Widgets.refreshAll(this@MainActivity)
                         applySecureFlag()
                         notifyWeb("appLock", enabled)
                     }
@@ -471,7 +488,9 @@ class MainActivity : AppCompatActivity() {
         /** Called after the server confirmed who is signed in; only that account's changes are uploaded. */
         @JavascriptInterface fun setSyncUser(user: String) = safe(Unit) { if (user.isNotBlank()) { SyncQueue.setActiveUser(this@MainActivity, user); SyncQueue.schedule(this@MainActivity) } }
         /** Sign-out: forget this account's queued changes on this device. */
-        @JavascriptInterface fun clearLocal(user: String) = safe(Unit) { SyncQueue.clearUser(this@MainActivity, user) }
+        @JavascriptInterface fun clearLocal(user: String) = safe(Unit) { SyncQueue.clearUser(this@MainActivity, user); Widgets.clear(this@MainActivity) }
+        /** A small summary for the home screen widgets: a count per day and the active profile's name. */
+        @JavascriptInterface fun updateWidgets(json: String) = safe(Unit) { if (json.length <= 20_000) Widgets.update(this@MainActivity, json) }
         /** Whether the device still holds a sign-in session cookie (it is removed on sign-out). */
         @JavascriptInterface fun hasSession(): Boolean = safe(false) { hasSessionCookie() }
         /** The installed app version, straight from the package (set by android-release.json at build time). */

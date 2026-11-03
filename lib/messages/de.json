@@ -942,5 +942,9 @@
   "Hour": "Stunde",
   "Minute": "Minute",
   "Now": "Jetzt",
-  "Choose a time.": "Wähle eine Uhrzeit."
+  "Choose a time.": "Wähle eine Uhrzeit.",
+  "Quick actions": "Schnellaktionen",
+  "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.": "Halte die +-Taste in der unteren Leiste, um „Transaktion hinzufügen“ oder den Kalender zu wählen. Standardmäßig aus, damit langes Drücken nichts Unerwartetes auslöst.",
+  "Transaction calendar": "Transaktionskalender",
+  "Add an account first, then you can record transactions.": "Füge zuerst ein Konto hinzu, dann kannst du Transaktionen erfassen."
 }

@@ -31,4 +31,26 @@
     <string name="startup_failed">TWMG couldn\'t start</string>
     <string name="startup_failed_detail">This phone\'s Android System WebView isn\'t available. Update or enable it in the Play Store, then try again.</string>
     <string name="session_expired">Your session ended. Please sign in again.</string>
+    <string name="shortcut_add">Add transaction</string>
+    <string name="shortcut_add_long">Add a transaction</string>
+    <string name="shortcut_calendar">Calendar</string>
+    <string name="shortcut_calendar_long">Transaction calendar</string>
+    <string name="shortcut_profile">Switch profile</string>
+    <string name="shortcut_profile_long">Switch profile</string>
+    <string name="widget_calendar_name">Transaction calendar</string>
+    <string name="widget_calendar_about">This month, with the days you recorded transactions. Tap to open the calendar.</string>
+    <string name="widget_add_about">Start adding a transaction with one tap.</string>
+    <string name="widget_profile_about">Shows your active profile. Tap to switch.</string>
+    <string name="widget_profile_description">Active profile: %1$s. Opens the profile switcher.</string>
+    <string name="widget_switch">Tap to switch</string>
+    <string name="widget_sign_in">Sign in to TWMG</string>
+    <string name="widget_locked">Locked. Open TWMG to see this.</string>
+    <plurals name="widget_calendar_description">
+        <item quantity="one">Transaction calendar, %1$s, %2$d day with transactions. Opens the calendar.</item>
+        <item quantity="other">Transaction calendar, %1$s, %2$d days with transactions. Opens the calendar.</item>
+    </plurals>
+    <plurals name="widget_day">
+        <item quantity="one">Day %1$d, %2$d transaction</item>
+        <item quantity="other">Day %1$d, %2$d transactions</item>
+    </plurals>
 </resources>

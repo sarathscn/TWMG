@@ -942,5 +942,9 @@
   "Hour": "الساعة",
   "Minute": "الدقيقة",
   "Now": "الآن",
-  "Choose a time.": "اختر وقتًا."
+  "Choose a time.": "اختر وقتًا.",
+  "Quick actions": "إجراءات سريعة",
+  "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.": "اضغط مطولاً على زر + في الشريط السفلي لاختيار إضافة معاملة أو التقويم. هذا الخيار متوقف افتراضيًا حتى لا يؤدي الضغط المطول إلى شيء غير متوقع.",
+  "Transaction calendar": "تقويم المعاملات",
+  "Add an account first, then you can record transactions.": "أضف حسابًا أولاً، ثم يمكنك تسجيل المعاملات."
 }

@@ -942,5 +942,9 @@
   "Hour": "Hour",
   "Minute": "Minute",
   "Now": "Now",
-  "Choose a time.": "Choose a time."
+  "Choose a time.": "Choose a time.",
+  "Quick actions": "Quick actions",
+  "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.": "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.",
+  "Transaction calendar": "Transaction calendar",
+  "Add an account first, then you can record transactions.": "Add an account first, then you can record transactions."
 }

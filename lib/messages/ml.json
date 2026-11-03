@@ -942,5 +942,9 @@
   "Hour": "മണിക്കൂർ",
   "Minute": "മിനിറ്റ്",
   "Now": "ഇപ്പോൾ",
-  "Choose a time.": "സമയം തിരഞ്ഞെടുക്കുക."
+  "Choose a time.": "സമയം തിരഞ്ഞെടുക്കുക.",
+  "Quick actions": "ദ്രുത പ്രവർത്തനങ്ങൾ",
+  "Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.": "ഇടപാട് ചേർക്കാനോ കലണ്ടർ തുറക്കാനോ താഴത്തെ ബാറിലെ + ബട്ടൺ അമർത്തിപ്പിടിക്കുക. ഇത് സ്ഥിരമായി ഓഫാണ്, അതിനാൽ നീണ്ട അമർത്തൽ അപ്രതീക്ഷിതമായി ഒന്നും ചെയ്യില്ല.",
+  "Transaction calendar": "ഇടപാട് കലണ്ടർ",
+  "Add an account first, then you can record transactions.": "ആദ്യം ഒരു അക്കൗണ്ട് ചേർക്കുക, തുടർന്ന് ഇടപാടുകൾ രേഖപ്പെടുത്താം."
 }
