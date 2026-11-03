@@ -101,7 +101,7 @@ img,svg,canvas{max-width:100%}
 
 /* Record appearance: chosen emoji and color on accounts, parties, groups and plans. */
 .record-icon.has-emoji{font-size:17px;line-height:1}.budget-icon.record-icon.has-emoji{font-size:13px}.account-bank-icon.record-icon.has-emoji{font-size:18px}
-.appearance-picker{margin-top:4px}.appearance-picker .emoji-picker{margin-bottom:18px}
+.appearance-picker{margin-top:4px}
 .ledger-heading{display:flex;align-items:center;gap:12px}.ledger-heading .record-icon{width:38px;height:38px;font-size:21px}
 .donut-empty{fill:var(--line)}
 .spending-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;padding:6px 0;font-size:11px;color:var(--text)}.spending-empty b{font-weight:600}.spending-empty small{font-size:10px;color:var(--muted)}
@@ -438,7 +438,7 @@ button:active:not(:disabled){transform:scale(.97)}
 .color-tile[aria-checked=true] .color-chip,.custom-tile.is-custom .color-chip{transform:scale(1.04);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent),0 3px 8px rgba(20,40,30,.2)}
 .color-tile[aria-checked=true] .color-name,.custom-tile.is-custom .color-name{color:var(--text);font-weight:600}
 .custom-tile:not(.is-custom) .color-chip{color:#fff;background:conic-gradient(#e5484d,#f5d90a,#46a758,#05a2c2,#3e63dd,#d6409f,#e5484d)}.custom-tile:not(.is-custom) svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
-.color-picker .color-custom{margin-top:12px}
+.color-sheet-body .color-custom{margin-top:12px}
 /* Colour marks in lists, legends and menus share one shape */
 .color-dot,.category-dot,.account-dot,.spending-list i,.legend i{display:inline-block;flex-shrink:0;width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);vertical-align:-1px}
 .color-dot{margin-inline-end:8px}.account-dot{margin-inline-end:7px}
@@ -459,3 +459,30 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 [data-theme=dark] .tabs button.selected{background:var(--accent);color:#17221d}
 [data-theme=dark] .add-card,[data-theme=dark] .add-card h3,[data-theme=dark] .add-card p{color:var(--muted)}
 [data-theme=dark] .add-card{background:rgba(255,255,255,.04)}
+
+/* Compact colour field and the sheet it opens */
+.color-field-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.color-field-button{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 16px 6px 6px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:transform var(--t-fast) var(--ease),border-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.color-field-button:hover{border-color:var(--accent)}
+.color-field-button:active{transform:scale(.98)}
+.color-field-swatch{display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--soft);color:var(--muted);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(0,0,0,.14)}
+[dir=rtl] .color-field-button{padding:6px 6px 6px 16px}
+.color-sheet-body{padding:14px}
+.color-sheet-foot{gap:10px}
+
+/* Spacing: stretched cards anchor their last line, panels never touch, a lone panel takes the row */
+.account-card{display:flex;flex-direction:column}
+.account-card>.text-button,.account-card>.secondary,.account-card>button:last-child{align-self:flex-start}
+.account-card>p:last-child{margin-top:auto;padding-top:14px}
+.account-grid .add-card{min-height:200px}
+.account-grid+.muted{margin-top:18px}
+main>.panel+.panel{margin-top:22px}
+.panel.budgets{display:flex;flex-direction:column}
+.panel.budgets .budget-link{margin-top:auto;padding-top:14px}
+.panel.spending:not(.account-diagram){display:flex;flex-direction:column}
+.panel.spending:not(.account-diagram) .donut{margin-block:auto}
+.settings-grid>:only-child{grid-column:1/-1}
+@media(min-width:951px){
+.settings-grid:has(.account-settings){grid-template-rows:auto auto auto 1fr;align-items:start}
+.settings-grid .account-settings{grid-column:2;grid-row:1/span 4}
+}

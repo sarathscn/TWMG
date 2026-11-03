@@ -909,5 +909,8 @@
   "Teal": "Teal",
   "Mustard": "Mustard",
   "Olive": "Olive",
-  "Brick": "Brick"
+  "Brick": "Brick",
+  "Change color": "Change color",
+  "Use default color": "Use default color",
+  "Default": "Default"
 }

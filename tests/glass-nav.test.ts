@@ -35,3 +35,13 @@ test('Colour tiles are a labelled radio group, and no text is under 10px',()=>{
  assert.ok(sizes.every(n=>n>=10),'smallest font '+Math.min(...sizes));
  assert.match(css,/--muted:#5f6b5d/,'muted text reaches 4.5:1 on light surfaces');
 });
+test('The colour field is compact, opens the tiles in a sheet, and can go back to the default',()=>{
+ const ui=readFileSync('app/ui/RecordAppearance.tsx','utf8');
+ assert.match(ui,/className="color-field-button" aria-haspopup="dialog" aria-expanded=\{open\}/);
+ assert.match(ui,/current !== defaultColor && <button[\s\S]{0,80}onChange\(defaultColor\)/,'the default link hides once it is in use');
+ assert.match(ui,/<PickerSheet title=\{tr\('Change color'\)\}/);
+ assert.match(ui,/aria-label=\{tr\('Custom color'\)\}/,'custom colours stay available');
+ assert.match(readFileSync('app/ui/Profiles.tsx','utf8'),/defaultColor=\{profileColors\[0\]\}/,'a profile always saves a valid colour');
+ assert.match(readFileSync('app/ui/Preferences.tsx','utf8'),/color: color \|\| nextCategoryColor\(rows\)/,'a category gets an automatic colour');
+ assert.match(ui,/className="emoji-field-button"/,'the icon field stays a compact button too');
+});

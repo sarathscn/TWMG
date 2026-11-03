@@ -909,5 +909,8 @@
   "Teal": "Petrol",
   "Mustard": "Senf",
   "Olive": "Oliv",
-  "Brick": "Ziegel"
+  "Brick": "Ziegel",
+  "Change color": "Farbe ändern",
+  "Use default color": "Standardfarbe verwenden",
+  "Default": "Standard"
 }
