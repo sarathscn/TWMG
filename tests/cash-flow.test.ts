@@ -91,3 +91,11 @@ test('Panels never touch, and a lone or short panel leaves no void',()=>{
  assert.match(css,/\.settings-grid \.account-settings\{grid-column:2;grid-row:1\/span 4\}/);
  assert.match(css,/\.account-card>p:last-child\{margin-top:auto/);
 });
+test('Forms have one solid surface, and shared groups open from a box',()=>{
+ const css=readFileSync('app/globals.css','utf8'),groups=readFileSync('app/ui/SharedGroups.tsx','utf8'),profiles=readFileSync('app/ui/Profiles.tsx','utf8');
+ assert.match(css,/\.modal-head,\.modal-footer\{background:var\(--bg\)\}/);
+ assert.match(css,/\.modal-footer\{margin-inline:calc\(var\(--modal-pad\)\*-1\)/);
+ assert.match(groups,/open \? groups\.length > 0 && <div className="account-grid">/);
+ assert.match(groups,/<button className="ledger-title" onClick=\{\(\) => open\(group\.id\)\}/);
+ assert.match(profiles,/className="appearance-picker"><ColorPicker[^>]*\/><IconPicker/,'colour and icon sit together');
+});

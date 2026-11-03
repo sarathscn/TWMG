@@ -43,5 +43,5 @@ test('The colour field is compact, opens the tiles in a sheet, and can go back t
  assert.match(ui,/aria-label=\{tr\('Custom color'\)\}/,'custom colours stay available');
  assert.match(readFileSync('app/ui/Profiles.tsx','utf8'),/defaultColor=\{profileColors\[0\]\}/,'a profile always saves a valid colour');
  assert.match(readFileSync('app/ui/Preferences.tsx','utf8'),/color: color \|\| nextCategoryColor\(rows\)/,'a category gets an automatic colour');
- assert.match(ui,/className="emoji-field-button"/,'the icon field stays a compact button too');
+ assert.equal((ui.match(/className="color-field-button"/g)||[]).length,2,'colour and icon use one compact button');
 });

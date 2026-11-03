@@ -1,7 +1,7 @@
 'use client';
 import { useI18n, ValidatedForm } from './UIProvider';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Users, Plus, X, Check, LoaderCircle, CheckCircle2, ArrowDownLeft } from 'lucide-react';
+import { Users, Plus, X, Check, LoaderCircle, CheckCircle2, ArrowDownLeft, ChevronRight } from 'lucide-react';
 import { currencyScale, fractionDigits, maxAmountMajor, parseMoney } from '../../lib/countries';
 import { ThemedSelect, DateField } from './Controls';
 import { AppearancePicker, RecordIcon, emojiLabel } from './RecordAppearance';
@@ -24,7 +24,16 @@ export function SharedGroups({ groups, ...props }: GroupProps & {
     groups: Item[];
 }) {
     const { tr, text, confirmAction } = useI18n();
-    return <><div className="shared-groups">{text(groups.map(group => <SharedGroupCard key={group.id} group={group} {...props}/>))}</div>{text(!groups.length && <div className="panel empty"><Users /><h3>{tr("Keep shared expenses together")}</h3><p>{tr("Create a group and add the names of everyone sharing costs.")}</p><button className="secondary" onClick={() => props.edit()}><Plus size={15}/>{tr("Create group")}</button></div>)}<div className="info-note"><Users size={18}/><span>{tr("Member names determine the split. Add and manage transactions separately. These shared costs do not create duplicate account expenses.")}</span></div></>;
+    const { open } = props;
+    return <>{text(open ? groups.length > 0 && <div className="account-grid">{groups.map(group => <SharedGroupBox key={group.id} group={group} {...props} open={open}/>)}<button className="add-card" onClick={() => props.edit()}><Plus /><h3>{tr("Create group")}</h3><p>{tr("Create a group and add the names of everyone sharing costs.")}</p></button></div> : <div className="shared-groups">{groups.map(group => <SharedGroupCard key={group.id} group={group} {...props}/>)}</div>)}{text(!groups.length && <div className="panel empty"><Users /><h3>{tr("Keep shared expenses together")}</h3><p>{tr("Create a group and add the names of everyone sharing costs.")}</p><button className="secondary" onClick={() => props.edit()}><Plus size={15}/>{tr("Create group")}</button></div>)}<div className="info-note"><Users size={18}/><span>{tr("Member names determine the split. Add and manage transactions separately. These shared costs do not create duplicate account expenses.")}</span></div></>;
+}
+function SharedGroupBox({ group, money, edit, remove, open, me = '' }: GroupProps & {
+    group: Item;
+    open: (id: string) => void;
+}) {
+    const { tr, text } = useI18n();
+    const names = groupMembers(group), self = groupSelf(group, me), total = sharedTotal(sharedEntries(group));
+    return <Swipeable as="article" className="panel item-card group-box" onEdit={() => edit(group)} onDelete={remove && (() => remove(group))}><div className="item-top"><RecordIcon record={group} fallback={<Users size={21}/>}/></div><button className="ledger-title" onClick={() => open(group.id)}><h3>{group.name}</h3><ChevronRight size={18}/></button><p>{text(names.map(n => memberLabel(n, self, tr('You'))).join(', '))} · {text(names.length)}{tr(" people")}</p><div className="group-box-stats"><div><small>{tr("GROUP TOTAL")}</small><strong>{text(money(total))}</strong></div><div><small>{tr("OUTSTANDING")}</small><strong>{text(money(Math.max(0, total - (group.paid || 0))))}</strong></div></div><button className="secondary" onClick={() => open(group.id)}>{tr("View details")}<ChevronRight size={15}/></button></Swipeable>;
 }
 function SharedGroupCard({ group, money, date, edit, remove, transaction, removeEntry, settle, open, initialTab, me = '' }: GroupProps & {
     group: Item;

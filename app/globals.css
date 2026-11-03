@@ -175,9 +175,9 @@ tr.swipeable[data-swipe=delete]>td:last-child::after{content:var(--swipe-delete)
 /* Bank name and last digits / wallet reference under an account type. */
 .account-reference{display:block;font-size:10px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
 /* Emoji field and picker sheet */
-.emoji-field{margin:0 0 20px}.emoji-field-label{display:block;font-size:11px;color:var(--muted);margin-bottom:10px}.emoji-field-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.emoji-field-button{display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer}.emoji-field-button:hover{border-color:var(--accent)}
-.emoji-current{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);font-size:19px;line-height:1}
+
+
+
 .emoji-sheet-backdrop{position:fixed;inset:0;z-index:260;background:#0d1c15a8;backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:twmg-fade .16s ease-out}
 .emoji-sheet{width:min(460px,100%);max-height:min(620px,calc(100vh - 32px));display:flex;flex-direction:column;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:18px;box-shadow:0 24px 80px #0005;overflow:hidden}
 .emoji-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 6px 18px}.emoji-sheet-head h3{font-size:15px;margin:0}
@@ -384,7 +384,7 @@ h1,h2,h3{letter-spacing:-.015em}
 .secondary:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
 .icon-button{min-width:36px;min-height:36px;border-radius:11px;color:var(--muted)}
 input,select,textarea,.themed-select,.date-trigger{border-radius:var(--r-control);transition:border-color var(--t-fast),box-shadow var(--t-fast),background-color var(--t-fast)}
-.primary,.secondary,.icon-button,.text-button,.text-danger,.filter-toggle,.filter-chip,.category-chip,.more-tile,.metric-link,.sidebar nav button,.tabs button,.sync-pill,.emoji-field-button,.notification-item,.select-option,.tx-row>td{transition:transform var(--t-fast) var(--ease),background-color var(--t) var(--ease),border-color var(--t) var(--ease),box-shadow var(--t) var(--ease),color var(--t) var(--ease)}
+.primary,.secondary,.icon-button,.text-button,.text-danger,.filter-toggle,.filter-chip,.category-chip,.more-tile,.metric-link,.sidebar nav button,.tabs button,.sync-pill,.notification-item,.select-option,.tx-row>td{transition:transform var(--t-fast) var(--ease),background-color var(--t) var(--ease),border-color var(--t) var(--ease),box-shadow var(--t) var(--ease),color var(--t) var(--ease)}
 button:active:not(:disabled){transform:scale(.97)}
 @media(hover:hover){.more-tile:hover,.metric-link:hover,.account-card:hover{transform:translateY(-2px);box-shadow:var(--elev-2),inset 0 1px 0 var(--glass-line)}.account-card{transition:transform var(--t) var(--ease),box-shadow var(--t) var(--ease)}}
 .sidebar nav button{border-radius:var(--r-control)}
@@ -486,3 +486,34 @@ main>.panel+.panel{margin-top:22px}
 .settings-grid:has(.account-settings){grid-template-rows:auto auto auto 1fr;align-items:start}
 .settings-grid .account-settings{grid-column:2;grid-row:1/span 4}
 }
+
+/* Forms: one solid surface, so the header and footer match the body and nothing shows through them */
+.modal{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.modal-head,.modal-footer{background:var(--bg)}
+.modal form{--modal-pad:25px}
+.modal-footer{margin-inline:calc(var(--modal-pad)*-1);padding:14px var(--modal-pad) calc(14px + env(safe-area-inset-bottom))}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:var(--focus);box-shadow:0 0 0 2px var(--focus)}
+@media(max-width:700px){.modal form{--modal-pad:20px}}
+/* Colour and icon fields sit side by side wherever they appear */
+.appearance-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0 12px;align-items:start}
+.color-field-button{background:var(--surface);min-width:0}
+.color-field-swatch.icon-swatch{background:var(--soft);color:var(--text);font-size:19px;font-weight:700;line-height:1}
+.color-field .text-button{font-size:11px}
+/* Account cards: nothing tall in a card, so rows stay close to their content */
+.account-card-top{margin-bottom:18px}
+.account-card h3{margin-bottom:6px}
+.account-card>.text-button{margin-bottom:10px}
+.account-card h2{margin-bottom:12px}
+.credit-info{margin-block:6px 8px}
+.account-card-top>span{min-width:0}
+.credit-account .account-card-top>.secondary{margin:0 0 0 auto;margin-inline-start:auto;padding:7px 11px;font-size:11px;white-space:nowrap;flex:none}
+/* Shared group boxes, and its full card once opened */
+.group-box{display:flex;flex-direction:column}
+.group-box>.secondary{align-self:flex-start;margin-top:auto}
+.group-box-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-block:14px 16px}
+.group-box-stats small{display:block;font-size:10px;letter-spacing:.8px;color:var(--muted);margin-bottom:4px}
+.group-box-stats strong{font:700 16px 'Manrope',sans-serif;overflow-wrap:anywhere}
+.shared-groups>:only-child{grid-column:1/-1}
+.customize-profile .form-grid{grid-template-columns:1fr}
+.modal .form-grid>*{min-width:0}
+@media(max-width:700px){.modal form .form-grid:has(.date-trigger){grid-template-columns:minmax(0,1fr)}}

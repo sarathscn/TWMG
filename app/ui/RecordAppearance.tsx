@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from './UIProvider';
-import { Check, Palette, Pipette, Search, X } from 'lucide-react';
+import { Check, Palette, Pipette, Search, Shapes, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { hexColor, readableOn, recordColors, recordColorNames, emojiCatalog } from '../../lib/card-options';
@@ -138,20 +138,26 @@ function ColorSheet({ current, presets, isDefault, onChange, reset, close }: {
         <div className="emoji-sheet-foot color-sheet-foot">{!isDefault && <button type="button" className="secondary" onClick={() => { reset(); close(); }}>{tr('Use default color')}</button>}<button type="button" className="primary" onClick={close}>{tr('Done')}</button></div>
     </PickerSheet>;
 }
-// The record icon field: shows only the chosen emoji, and opens a bottom sheet with a
-// searchable, categorised emoji collection. Drawn by the app, so it follows the theme.
-export function IconPicker({ emoji, onEmoji, legend, defaultLabel = '·' }: {
+// The record icon field, in the same shape as the colour field: a compact button showing the
+// chosen emoji, which opens a bottom sheet with a searchable, categorised emoji collection. Drawn by
+// the app, so it follows the theme. Set hasPhoto when a picture stands in for the icon.
+export function IconPicker({ emoji, onEmoji, legend, defaultLabel, hasPhoto = false }: {
     emoji?: string;
     onEmoji: (emoji: string) => void;
     legend: string;
     defaultLabel?: string;
+    hasPhoto?: boolean;
 }) {
     const { tr, text } = useI18n();
     const [open, setOpen] = useState(false);
-    return <div className="emoji-field"><span className="emoji-field-label">{text(legend)}</span><div className="emoji-field-row">
-        <button type="button" className="emoji-field-button" aria-haspopup="dialog" aria-expanded={open} aria-label={emoji ? tr('Change icon') + ' ' + emoji : tr('Choose icon')} onClick={() => setOpen(true)}><span className="emoji-current" aria-hidden="true">{emoji || defaultLabel}</span><span>{tr(emoji ? 'Change icon' : 'Choose icon')}</span></button>
-        {emoji && <button type="button" className="text-button" onClick={() => onEmoji('')}>{tr('Use default icon')}</button>}
-    </div>{open && <EmojiSheet selected={emoji || ''} close={() => setOpen(false)} choose={e => { onEmoji(e); setOpen(false); }}/>}</div>;
+    const trigger = useRef<HTMLButtonElement>(null);
+    return <fieldset className="color-picker color-field"><legend>{text(legend)}{!hasPhoto && <span className="color-current"> · {emoji || tr('Default')}</span>}</legend>
+        <div className="color-field-row">
+            <button type="button" ref={trigger} className="color-field-button" aria-haspopup="dialog" aria-expanded={open} aria-label={emoji ? tr('Change icon') + ' ' + emoji : tr('Choose icon')} onClick={() => setOpen(true)}><span className="color-field-swatch icon-swatch" aria-hidden="true">{emoji || defaultLabel || <Shapes size={17}/>}</span><span>{tr(emoji ? 'Change icon' : 'Choose icon')}</span></button>
+            {emoji && <button type="button" className="text-button" onClick={() => { onEmoji(''); trigger.current?.focus(); }}>{tr('Use default icon')}</button>}
+        </div>
+        {open && <EmojiSheet selected={emoji || ''} close={() => setOpen(false)} choose={e => { onEmoji(e); setOpen(false); }}/>}
+    </fieldset>;
 }
 function EmojiSheet({ selected, close, choose }: { selected: string; close: () => void; choose: (emoji: string) => void }) {
     const { tr } = useI18n();
