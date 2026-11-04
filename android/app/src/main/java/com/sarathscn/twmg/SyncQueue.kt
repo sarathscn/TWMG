@@ -29,8 +29,10 @@ import java.util.concurrent.TimeUnit
  */
 object SyncQueue {
     private const val WORK = "twmg-outbox"
+    private const val WORK_NOW = "twmg-outbox-now"
     private const val PREFS = "twmg-sync"
     private val lock = Any()
+    private val flushLock = Any()
 
     private fun file(context: Context) = File(context.noBackupFilesDir, "sync-queue.json")
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -112,20 +114,44 @@ object SyncQueue {
         SyncBus.emit(status(context))
     }
 
-    /** Upload as soon as there is a connection; runs after any upload already in progress. */
+    /**
+     * Upload as soon as there is a connection. Replaces any job still waiting out a retry delay, so a
+     * new change, a tap on the sync pill or returning to the app is never stuck behind that delay.
+     * An upload already in progress finishes first (see [flushLock]).
+     *
+     * Android only counts a connection once it has verified internet access, which can lag behind a
+     * connection that works (it was out for minutes at a time on mobile data), so one attempt also
+     * goes straight away. If that fails, the job with the network requirement carries on retrying.
+     */
     fun schedule(context: Context) {
         val request = OneTimeWorkRequestBuilder<OutboxWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(WORK, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+        val manager = WorkManager.getInstance(context)
+        manager.enqueueUniqueWork(WORK, ExistingWorkPolicy.REPLACE, request)
+        manager.enqueueUniqueWork(WORK_NOW, ExistingWorkPolicy.REPLACE, OneTimeWorkRequestBuilder<OutboxNowWorker>().build())
         SyncBus.emit(status(context))
     }
 
-    /** Uploads queued changes in order. Returns false when it should be retried later. */
-    fun flush(context: Context): Boolean {
+    /** The server may renew the session while answering; keep what it sends, or the next request reuses a spent token. */
+    private fun keepCookies(connection: HttpURLConnection, base: String) {
+        val cookies = connection.headerFields.entries.filter { it.key.equals("Set-Cookie", ignoreCase = true) }.flatMap { it.value }
+        if (cookies.isEmpty()) return
+        CookieManager.getInstance().apply { cookies.forEach { setCookie(base, it) }; flush() }
+    }
+
+    /** Uploads queued changes in order, one upload at a time. Returns false when it should be retried later. */
+    fun flush(context: Context): Boolean = synchronized(flushLock) { upload(context) }
+
+    private fun upload(context: Context): Boolean {
         val user = activeUser(context) ?: return true
         val base = BuildConfig.APP_URL
+        // Nothing to send is not an upload: the app refreshes after each one, and that refresh asks for another sync.
+        if (SyncRules.next(all(context).objects().map(::rule), user) == null) {
+            setState(context, if (list(context, user).length() == 0) "idle" else "failed")
+            return true
+        }
         setState(context, "syncing")
         while (true) {
             val ops = all(context).objects()
@@ -146,6 +172,7 @@ object SyncQueue {
                 }
                 connection.outputStream.use { it.write(body.toString().toByteArray()) }
                 val code = connection.responseCode
+                keepCookies(connection, base)
                 code to ((if (code < 400) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: "")
             } catch (e: IOException) { 0 to "" }
             val reply = try { JSONObject(text) } catch (e: Exception) { JSONObject() }
@@ -164,7 +191,7 @@ object SyncQueue {
                     }
                     SyncBus.emit(status(context))
                 }
-                SyncRules.Outcome.RETRY_LATER -> { setState(context, "offline"); return false }
+                SyncRules.Outcome.RETRY_LATER -> { setState(context, "retry", reply.optString("error")); return false }
                 SyncRules.Outcome.NEEDS_SIGN_IN -> { setState(context, "auth", "Sign in again to upload your changes."); return true }
                 SyncRules.Outcome.CONFLICT, SyncRules.Outcome.REJECTED -> {
                     val conflict = status == 409
@@ -186,11 +213,19 @@ object SyncBus {
     fun emit(status: JSONObject) { val l = listener ?: return; main.post { l(status) } }
 }
 
+/** The single immediate attempt from [SyncQueue.schedule]; retries are left to [OutboxWorker]. */
+class OutboxNowWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        try { SyncQueue.flush(applicationContext) } catch (e: Exception) { SyncQueue.setState(applicationContext, "retry") }
+        return Result.success()
+    }
+}
+
 class OutboxWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     // Anything unexpected (a full disk, a malformed entry) retries later instead of failing the job for good,
     // which would strand queued changes until the app next opens.
     override fun doWork(): Result = try { if (SyncQueue.flush(applicationContext)) Result.success() else Result.retry() } catch (e: Exception) {
-        SyncQueue.setState(applicationContext, "offline")
+        SyncQueue.setState(applicationContext, "retry")
         Result.retry()
     }
 }

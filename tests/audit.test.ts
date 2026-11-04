@@ -85,3 +85,15 @@ test('The hold gesture is off by default and never changes a normal tap',()=>{
 test('Signing out always reaches the widgets, even though the summary reads the same before sign-in is known',()=>{
  assert.ok(readFileSync('app/ui/FinanceApp.tsx','utf8').includes("callNative('updateWidgets', widgetSummary); }, [widgetSummary, signedOut]);"));
 });
+test('A change waiting on a retry delay uploads as soon as the app asks, and an empty queue does not refresh the app',()=>{
+ const q=readFileSync('android/app/src/main/java/com/sarathscn/twmg/SyncQueue.kt','utf8');
+ assert.ok(q.includes('ExistingWorkPolicy.REPLACE'));assert.ok(!q.includes('APPEND_OR_REPLACE'));
+ assert.ok(q.includes('synchronized(flushLock)'));
+ assert.ok(q.indexOf('== null) {',q.indexOf('private fun upload'))<q.indexOf('setState(context, "syncing")'));
+});
+test('Background uploads keep a renewed session, and the app says when uploads are paused',()=>{
+ assert.ok(readFileSync('android/app/src/main/java/com/sarathscn/twmg/SyncQueue.kt','utf8').includes('keepCookies(connection, base)'));
+ const ui=readFileSync('app/ui/AndroidApp.tsx','utf8');
+ assert.ok(ui.includes("status.state === 'retry' && pending ? 'retry'"));assert.ok(ui.includes("(mode === 'retry' && i === 0)"));
+ assert.ok(readFileSync('app/ui/FinanceApp.tsx','utf8').includes("callNative('syncNow'); if (document.visibilityState === 'visible' && serverProfile.current)"));
+});

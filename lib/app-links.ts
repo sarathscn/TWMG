@@ -16,6 +16,6 @@ export function widgetState(input:{signedIn:boolean;profile?:{name:string;color?
  if(!input.signedIn||!input.profile)return {signedIn:false};
  const d=new Date(input.today+'T00:00:00Z'),edge=(n:number)=>new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+n,1)).toISOString().slice(0,7);
  const from=edge(-1),to=edge(1),days:Record<string,number>={};
- for(const t of input.transactions){const m=t.date.slice(0,7);if(m>=from&&m<=to)days[t.date]=(days[t.date]||0)+1}
+ for(const t of input.transactions){if(!t.date)continue;const m=t.date.slice(0,7);if(m>=from&&m<=to)days[t.date]=(days[t.date]||0)+1}
  return {signedIn:true,profile:input.profile.name,color:input.profile.color||'',days};
 }

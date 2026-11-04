@@ -324,7 +324,7 @@ export default function FinanceApp() {
         };
         const up = () => { setOnline(true); callNative('syncNow'); if (serverProfile.current) load(wantProfile.current || serverProfile.current, true); };
         const down = () => setOnline(false);
-        const back = () => { if (document.visibilityState === 'visible' && serverProfile.current) load(wantProfile.current || serverProfile.current, true); };
+        const back = () => { if (document.visibilityState === 'visible') callNative('syncNow'); if (document.visibilityState === 'visible' && serverProfile.current) load(wantProfile.current || serverProfile.current, true); };
         window.addEventListener('twmg-native', onNative); window.addEventListener('online', up); window.addEventListener('offline', down); document.addEventListener('visibilitychange', back);
         return () => { window.removeEventListener('twmg-native', onNative); window.removeEventListener('online', up); window.removeEventListener('offline', down); document.removeEventListener('visibilitychange', back); };
     }, [localFirst]);
