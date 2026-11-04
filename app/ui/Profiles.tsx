@@ -3,7 +3,7 @@ import { useI18n, ValidatedForm } from './UIProvider';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowRight, Check, ChevronRight, Plus, X, Camera, LoaderCircle, ShieldCheck, TrendingUp, LogOut } from 'lucide-react';
 import type { Profile } from '../../lib/finance';
-import { profileColors } from '../../lib/profile';
+import { profileColors, profileSlots, maxProfiles } from '../../lib/profile';
 import { ThemedSelect } from './Controls';
 import { AuthForm } from './AuthForm';
 import { ColorPicker, IconPicker } from './RecordAppearance';
@@ -53,12 +53,12 @@ export function ProfileSwitcher({ profiles, active, busy, onChoose, onCreate, cl
     onSignOut: () => void;
 }) {
     const { tr, text, confirmAction } = useI18n();
-    const dialog = useRef<HTMLDivElement>(null);
+    const dialog = useRef<HTMLDivElement>(null), slots = profileSlots(profiles);
     useEffect(() => { const previous = document.activeElement as HTMLElement; dialog.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true }); return () => previous?.focus({ preventScroll: true }); }, []);
     return <div className="modal-backdrop switcher-backdrop" onMouseDown={e => {
             if (e.target === e.currentTarget)
                 close();
-        }}><div ref={dialog} className="modal profile-switcher" onKeyDown={trapProfileFocus} role="dialog" aria-modal="true" aria-labelledby="switcher-title"><div className="switcher-handle"/><div className="modal-head"><div><span className="eyebrow">{tr("YOUR PERSONAL SPACES")}</span><h2 id="switcher-title">{tr("Switch profile")}</h2></div><button className="icon-button" onClick={close} aria-label={tr("Close profile switcher")}><X size={21}/></button></div><div className="switcher-list">{profiles.map(p => <div className={'switcher-row ' + (p.id === active ? 'selected' : '')} key={p.id}><button disabled={busy} className="switcher-choose" onClick={() => onChoose(p.id)}><ProfileAvatar profile={p} size="large"/><span><b>{p.name}</b><small>{text(p.country)}</small>{p.bio && <p>{p.bio}</p>}</span><span className="profile-radio">{text(p.id === active && <i />)}</span></button>{p.id === active && <button className="switcher-account" onClick={onAccount}><ShieldCheck size={14}/>{tr("Account & sign-in")}<ChevronRight size={14}/></button>}</div>)}</div><div className="switcher-footer">{text(profiles.length < 3 && <button onClick={onCreate} disabled={busy}><span className="switcher-add"><Plus size={18}/></span>{tr("Add a profile")}<small>{text(profiles.length)}/3</small></button>)}<button onClick={onSignOut}><LogOut size={17}/>{tr("Sign out")}</button></div></div></div>;
+        }}><div ref={dialog} className="modal profile-switcher" onKeyDown={trapProfileFocus} role="dialog" aria-modal="true" aria-labelledby="switcher-title"><div className="switcher-handle"/><div className="modal-head"><div><span className="eyebrow">{tr("YOUR PERSONAL SPACES")}</span><h2 id="switcher-title">{tr("Switch profile")}</h2></div><button className="icon-button" onClick={close} aria-label={tr("Close profile switcher")}><X size={21}/></button></div><div className="switcher-list">{slots.shown.map(p => <div className={'switcher-row ' + (p.id === active ? 'selected' : '')} key={p.id}><button disabled={busy} className="switcher-choose" onClick={() => onChoose(p.id)}><ProfileAvatar profile={p} size="large"/><span><b>{p.name}</b><small>{text(p.country)}</small>{p.bio && <p>{p.bio}</p>}</span><span className="profile-radio">{text(p.id === active && <i />)}</span></button>{p.id === active && <button className="switcher-account" onClick={onAccount}><ShieldCheck size={14}/>{tr("Account & sign-in")}<ChevronRight size={14}/></button>}</div>)}{slots.canAdd && <div className="switcher-row"><button className="switcher-choose" disabled={busy} onClick={onCreate}><span className="switcher-add"><Plus size={20}/></span><span><b>{tr("Add a profile")}</b><small>{text(profiles.length)}/{maxProfiles}</small></span></button></div>}</div><div className="switcher-footer"><button onClick={onSignOut}><LogOut size={17}/>{tr("Sign out")}</button></div></div></div>;
 }
 export function ProfileEditor({ value, busy, error, close, save }: {
     value?: Profile;

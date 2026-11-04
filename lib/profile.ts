@@ -1,6 +1,9 @@
 import {z} from 'zod';
 import {hexColor,recordEmojis} from './card-options.ts';
 // Profiles share the app-wide color palette and icon set.
+// The switcher's slots: an account holds up to three profiles, and + takes the next free slot.
+export const maxProfiles=3;
+export const profileSlots=<T>(profiles:T[])=>({shown:profiles.slice(0,maxProfiles),canAdd:profiles.length<maxProfiles});
 export const profileColors=['#2d6048','#345c89','#70528b','#ac6747','#444b55','#8c4563'] as const;
 export const profileEmojis=recordEmojis;
 export {countryCurrencies} from './countries.ts';

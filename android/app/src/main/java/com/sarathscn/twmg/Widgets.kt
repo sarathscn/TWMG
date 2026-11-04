@@ -7,7 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.view.View
+import android.os.Build
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.time.LocalDate
@@ -78,8 +78,9 @@ object Widgets {
         if (showing) saved.optJSONObject("days")?.let { days -> days.keys().forEach { counts[it] = days.optInt(it) } }
         val monthName = month.month.getDisplayName(TextStyle.FULL, locale)
         views.setTextViewText(R.id.calendar_title, "$monthName ${month.year}")
-        views.setViewVisibility(R.id.calendar_hint, if (showing) View.GONE else View.VISIBLE)
-        views.setTextViewText(R.id.calendar_hint, context.getString(if (mode(context, saved) == WidgetRules.Mode.LOCKED) R.string.widget_locked else R.string.widget_sign_in))
+        val profile = saved.optString("profile")
+        // Which profile these days belong to; the summary is rewritten whenever the active profile changes.
+        views.setTextViewText(R.id.calendar_hint, if (showing) profile else context.getString(if (mode(context, saved) == WidgetRules.Mode.LOCKED) R.string.widget_locked else R.string.widget_sign_in))
         val firstDay = WeekFields.of(locale).firstDayOfWeek
         WEEKDAY_CELLS.forEachIndexed { i, id -> views.setTextViewText(id, firstDay.plus(i.toLong()).getDisplayName(TextStyle.NARROW, locale)) }
         val cells = WidgetRules.monthCells(month, today, counts, locale)
@@ -91,15 +92,18 @@ object Widgets {
                 cell.count > 0 -> R.drawable.widget_day_marked
                 else -> 0
             })
-            views.setTextColor(id, context.getColor(if (cell.isToday) R.color.widget_on_brand else R.color.text))
+            val dayColor = if (cell.isToday) R.color.widget_on_brand else R.color.text
+            // By resource where Android allows it, so the numbers follow a light/dark switch without a redraw.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) views.setColorStateList(id, "setTextColor", dayColor) else views.setTextColor(id, context.getColor(dayColor))
             if (cell.date != null) views.setContentDescription(id, context.resources.getQuantityString(R.plurals.widget_day, cell.count, cell.day, cell.count))
         }
         val marked = cells.count { it.count > 0 }
         views.setContentDescription(R.id.widget_root, when {
-            showing -> context.resources.getQuantityString(R.plurals.widget_calendar_description, marked, "$monthName ${month.year}", marked)
+            showing -> context.resources.getQuantityString(R.plurals.widget_calendar_description, marked, "$monthName ${month.year}", marked, profile)
             else -> context.getString(R.string.widget_calendar_name)
         })
         views.setOnClickPendingIntent(R.id.widget_root, openIntent(context, "calendar"))
+        views.setOnClickPendingIntent(R.id.calendar_add, openIntent(context, "add-transaction"))
         return views
     }
 

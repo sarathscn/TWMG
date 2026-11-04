@@ -134,6 +134,8 @@ class MainActivity : AppCompatActivity() {
         SyncBus.listener = { status -> notifyWebJson("sync", status.toString()) }
         if (SyncQueue.activeUser(this) != null) SyncQueue.schedule(this)
         if (Reminders.enabled(this)) Reminders.schedule(this)
+        // A force-stop cancels the widgets' tap actions, and an unchanged summary would not restore them.
+        Widgets.refreshAll(this)
         // The startup screen runs edge to edge; the app below it stays inside the system bars.
         val outer = FrameLayout(this)
         val root = FrameLayout(this)

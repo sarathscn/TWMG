@@ -97,3 +97,10 @@ test('Background uploads keep a renewed session, and the app says when uploads a
  assert.ok(ui.includes("status.state === 'retry' && pending ? 'retry'"));assert.ok(ui.includes("(mode === 'retry' && i === 0)"));
  assert.ok(readFileSync('app/ui/FinanceApp.tsx','utf8').includes("callNative('syncNow'); if (document.visibilityState === 'visible' && serverProfile.current)"));
 });
+test('The calendar widget names the active profile and has its own Add transaction button',()=>{
+ const k=readFileSync('android/app/src/main/java/com/sarathscn/twmg/Widgets.kt','utf8');
+ assert.ok(k.includes('setOnClickPendingIntent(R.id.calendar_add, openIntent(context, "add-transaction"))'));
+ assert.ok(k.includes('if (showing) profile else'));
+ const s=widgetState({signedIn:true,profile:{name:'Family'},transactions:[{date:'2026-11-03'}],today:'2026-11-03'}) as {profile:string;days:Record<string,number>},o=widgetState({signedIn:true,profile:{name:'Work'},transactions:[],today:'2026-11-03'}) as {profile:string;days:Record<string,number>};
+ assert.equal(s.profile,'Family');assert.equal(s.days['2026-11-03'],1);assert.equal(o.profile,'Work');assert.equal(o.days['2026-11-03'],undefined);
+});
