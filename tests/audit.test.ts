@@ -53,10 +53,10 @@ test('The app tells the startup screen when it is ready, without needing the nat
  assert.match(ui,/callNative\('startupReady', signedOut \? 'signed-out' : error \? 'error' : 'ready'\)/);
  assert.match(readFileSync('app/ui/DeviceSecurity.tsx','utf8'),/typeof fn !== 'function'|typeof .* === 'function'|\?\.\[name\]|!fn/);
 });
-test('Long lists draw in steps, and printed reports get every row',()=>{
+test('Long lists draw in steps, and the PDF report gets every row',()=>{
  const ui=readFileSync('app/ui/FinanceApp.tsx','utf8');
  assert.ok(ui.includes('rows.slice(0, rowLimit).map('));
- assert.ok(ui.includes('flushSync(() => setRowLimit(Infinity)); window.print()'));
+ assert.ok(ui.includes('reportTx.map(x => transactionRow('));assert.ok(!ui.includes('window.print()'));
  assert.ok(ui.includes('setRowLimit(ROW_STEP); }, [view, ledger, filter, search, filters, dateFrom, dateTo]'));
 });
 test('Server failure messages have real translations, not the "check the fields" fallback',()=>{

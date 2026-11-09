@@ -1,7 +1,7 @@
 'use client';
 import { displayMoment } from '../../lib/dates';
 import { Component, useEffect, useState, type ReactNode } from 'react';
-import { BellRing, Fingerprint, KeyRound, Plus} from 'lucide-react';
+import { BellRing, Fingerprint, KeyRound, Plus, ScanLine } from 'lucide-react';
 import { useI18n } from './UIProvider';
 import { createClient } from '../../lib/supabase/client';
 import { passkeysAvailable, passkeyMessage } from '../../lib/passkeys';
@@ -15,6 +15,8 @@ type AndroidBridge = {
     appLockAvailable(): boolean;
     appLockEnabled(): boolean;
     setAppLockEnabled(enabled: boolean): void;
+    captureBlocked(): boolean;
+    setCaptureBlocked(blocked: boolean): void;
     remindersEnabled(): boolean;
     setRemindersEnabled(enabled: boolean): void;
     syncReminders(lang: string): void;
@@ -78,19 +80,22 @@ export function PasskeyManager() {
 // Android-only settings: biometric app lock and local bill reminders.
 export function DeviceSettings() {
     const { tr } = useI18n();
-    const [ready, setReady] = useState(false), [lockAvailable, setLockAvailable] = useState(false), [lock, setLock] = useState(false), [reminders, setReminders] = useState(false), [quick, setQuick] = useState(false);
+    const [ready, setReady] = useState(false), [lockAvailable, setLockAvailable] = useState(false), [lock, setLock] = useState(false), [reminders, setReminders] = useState(false), [quick, setQuick] = useState(false), [captureSupported, setCaptureSupported] = useState(false), [captureBlocked, setCaptureBlocked] = useState(false);
     useEffect(() => {
         if (!hasDeviceFeatures()) return;
         setQuick(quickActionsOn());
+        // Installed apps older than this setting don't offer it.
+        setCaptureSupported(typeof bridge()?.setCaptureBlocked === 'function'); setCaptureBlocked(!!callNative('captureBlocked'));
         setReady(true); setLockAvailable(!!callNative('appLockAvailable')); setLock(!!callNative('appLockEnabled')); setReminders(!!callNative('remindersEnabled'));
         // Native confirms changes after the biometric prompt or permission dialog.
-        const onNative = (e: Event) => { const d = (e as CustomEvent).detail || {}; if (d.type === 'appLock') setLock(!!d.enabled); if (d.type === 'reminders') setReminders(!!d.enabled); };
+        const onNative = (e: Event) => { const d = (e as CustomEvent).detail || {}; if (d.type === 'appLock') { setLock(!!d.enabled); setCaptureBlocked(!!callNative('captureBlocked')); } if (d.type === 'reminders') setReminders(!!d.enabled); };
         window.addEventListener('twmg-native', onNative);
         return () => window.removeEventListener('twmg-native', onNative);
     }, []);
     if (!ready) return null;
     return <section className="panel settings-panel device-panel"><h3>{tr("This device")}</h3>
         <label className="device-toggle"><span><Fingerprint size={18}/><span><b>{tr("App lock")}</b><small>{tr(lockAvailable ? 'Unlock TWMG with your fingerprint, face or screen lock.' : 'Set up a fingerprint, face or screen lock on this phone to use App lock.')}</small></span></span><input type="checkbox" role="switch" checked={lock} disabled={!lockAvailable} onChange={e => callNative('setAppLockEnabled', e.target.checked)}/></label>
+        {captureSupported && <label className="device-toggle"><span><ScanLine size={18}/><span><b>{tr('Block screenshots')}</b><small>{tr('Stops screenshots, screen recording and the recent-apps preview of TWMG on this phone. Turn off to allow them.')}</small></span></span><input type="checkbox" role="switch" checked={captureBlocked} onChange={e => { setCaptureBlocked(e.target.checked); callNative('setCaptureBlocked', e.target.checked); }}/></label>}
         <label className="device-toggle"><span><Plus size={18}/><span><b>{tr('Quick actions')}</b><small>{tr('Hold the + button in the bottom bar to choose Add transaction or Calendar. Off by default, so a long press never does something unexpected.')}</small></span></span><input type="checkbox" role="switch" checked={quick} onChange={e => { setQuick(e.target.checked); setQuickActions(e.target.checked); }}/></label>
         <label className="device-toggle"><span><BellRing size={18}/><span><b>{tr("Bill reminders")}</b><small>{tr("Card bills, recurring payments, debts and goals: a reminder 7 days before, then follow-ups until it's paid.")}</small></span></span><input type="checkbox" role="switch" checked={reminders} onChange={e => callNative('setRemindersEnabled', e.target.checked)}/></label>
     </section>;

@@ -2,7 +2,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 // Release signing is read from a properties file kept outside the repository
@@ -17,12 +16,12 @@ val release = groovy.json.JsonSlurper().parse(rootProject.file("../android-relea
 
 android {
     namespace = "com.sarathscn.twmg"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.sarathscn.twmg"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = (release["versionCode"] as Number).toInt()
         versionName = release["versionName"] as String
         buildConfigField("String", "APP_URL", "\"https://twmg.vercel.app\"")
@@ -53,7 +52,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
@@ -69,6 +67,6 @@ dependencies {
     // WebAuthn (passkeys) inside the WebView on supported devices.
     implementation("androidx.webkit:webkit:1.14.0")
     // Background reminder sync and delivery that survive Doze and process death.
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
     testImplementation("junit:junit:4.13.2")
 }

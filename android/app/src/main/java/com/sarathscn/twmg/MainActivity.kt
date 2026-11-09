@@ -380,9 +380,11 @@ class MainActivity : AppCompatActivity() {
     private fun canUseLock() = BiometricManager.from(this).canAuthenticate(authenticators()) == BiometricManager.BIOMETRIC_SUCCESS
     private fun isLockOn() = prefs.getBoolean(KEY_APP_LOCK, false) && canUseLock()
 
-    // While App lock is on, keep balances out of screenshots and the recent-apps preview.
+    // Balances stay out of screenshots and the recent-apps preview while this is on. Until the person chooses, it follows App lock.
+    private fun captureBlocked() = prefs.getBoolean(KEY_BLOCK_CAPTURE, prefs.getBoolean(KEY_APP_LOCK, false))
+
     private fun applySecureFlag() {
-        if (prefs.getBoolean(KEY_APP_LOCK, false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (captureBlocked()) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     private fun lock() {
@@ -514,6 +516,9 @@ class MainActivity : AppCompatActivity() {
         /** The web app's data changed (a bill paid, a due date moved): refresh reminders from the server. */
         @JavascriptInterface fun syncReminders(lang: String) = safe(Unit) { Reminders.requestSync(this@MainActivity, lang) }
 
+        @JavascriptInterface fun captureBlocked(): Boolean = safe(false) { this@MainActivity.captureBlocked() }
+        @JavascriptInterface fun setCaptureBlocked(blocked: Boolean) = safe(Unit) { prefs.edit().putBoolean(KEY_BLOCK_CAPTURE, blocked).apply(); runOnUiThread { applySecureFlag() } }
+
         /** Receives files the web app downloads (CSV export, JSON backup) and saves them to Downloads. */
         @JavascriptInterface fun saveFile(name: String, dataUrl: String) = safe(Unit) {
             val safeName = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(120).ifBlank { "twmg-download" }
@@ -545,6 +550,7 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val KEY_APP_LOCK = "app_lock"
+        const val KEY_BLOCK_CAPTURE = "block_capture"
         const val KEY_DARK = "startup_dark"
         const val LOCK_AFTER_MS = 30_000L
         // The web app downloads via `a.download` + blob URLs, which WebView ignores. Remember each
