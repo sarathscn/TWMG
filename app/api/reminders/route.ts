@@ -7,7 +7,7 @@ import type {Data} from '../../../lib/finance';
 import {databaseFailure,fetchAll,isAuthOutage,ServiceError} from '../../../lib/api-errors';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
-const kinds=['accounts','transactions','budgets','goals','debts','shared','recurring','categories','paymentMethods','parties'];
+const kinds=['accounts','transactions','budgets','goals','debts','shared','recurring','categories','paymentMethods','parties','loans','payLater'];
 // Open financial reminders across all of the signed-in user's profiles, already worded in their
 // language. The Android app polls this in the background so a bill paid anywhere stops notifying.
 export async function GET(req:Request){try{

@@ -95,4 +95,4 @@ export async function reportPdf(doc:ReportDoc,labels:PdfLabels){
  return new Blob([pdfFromJpegs(out_,`${doc.title} - ${doc.subtitle}`) as BlobPart],{type:'application/pdf'});
 }
 // In the Android app the native download hook picks this up and saves to Downloads.
-export function saveBlob(name:string,blob:Blob){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+export function saveBlob(name:string,blob:Blob){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}

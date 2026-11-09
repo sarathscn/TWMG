@@ -57,7 +57,7 @@
         </receiver>
 
         <receiver android:name=".ReminderReceiver" android:exported="false" />
-        <receiver android:name=".RescheduleReceiver" android:exported="true">
+        <receiver android:name=".RescheduleReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
@@ -66,5 +66,9 @@
                 <action android:name="android.intent.action.DATE_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- Lets the share sheet read one exported report for as long as the receiving app needs it. -->
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.files" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

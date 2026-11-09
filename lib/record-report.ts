@@ -1,8 +1,10 @@
 import {balance,categoryAmount,groupMembers,linkedTransactions,partyBalance,sharedEntries,sharedMemberBalances,sharedTotal,type Data,type Transaction} from './finance.ts';
 import {displayDate} from './dates.ts';
+import {creditSummary} from './credit.ts';
+import {buildSummaryReport} from './summary-report.ts';
 // One report per record (account, card, party, debt, shared group, recurring bill, budget). The result is plain
 // strings, already translated and formatted, so the on-screen preview and the PDF always show the same thing.
-export type ReportKind='accounts'|'parties'|'debts'|'shared'|'recurring'|'budgets';
+export type ReportKind='accounts'|'parties'|'debts'|'shared'|'recurring'|'budgets'|'loans'|'payLater'|'summary';
 export type ReportTarget={kind:ReportKind;id:string};
 export type ReportPeriod={from:string;to:string};
 export type ReportRow={cells:string[];tone?:'in'|'out'};
@@ -49,7 +51,7 @@ export function transactionRow(t:Transaction,data:Data,amount:number,currency:st
  return {values:{date:displayDate(t.date),time:t.time||'',description:t.name,type:f.tr(t.type==='income'?'Income':t.type==='expense'?'Expense':'Transfer'),category:t.type==='transfer'?f.tr('Transfer'):t.splits?.length?t.splits.map(s=>s.category).join(', '):t.category,account:to?`${account} → ${to}`:account,paymentMethod:method,party:data.parties?.find(p=>p.id===t.partyId)?.name||'',group:data.shared.find(g=>g.id===t.sharedGroupId)?.name||'',bill:data.recurring.find(r=>r.id===t.recurringId)?.name||'',paidBy:t.paidBy||'',participants:t.participants?.join(', ')||'',notes:t.notes||'',tags:t.tags||'',amount:signed(amount,currency,f)},tone:amount>0?'in':amount<0?'out':undefined};
 }
 const monthsIn=(from:string,to:string)=>Math.max(1,(+to.slice(0,4)-+from.slice(0,4))*12+(+to.slice(5,7)-+from.slice(5,7))+1);
-export function buildRecordReport(target:ReportTarget,data:Data,period:ReportPeriod,f:ReportFormat,today:string):ReportDoc|null{
+export function buildRecordReport(target:ReportTarget,data:Data,period:ReportPeriod,f:ReportFormat,today:string,filterCategory=''):ReportDoc|null{
  const {tr,money,currency}=f,label=periodLabel(period,tr),empty=tr('Nothing recorded in this period.');
  const currencyOf=(t:Transaction)=>data.accounts.find(a=>a.id===t.account)?.currency||currency,txRow=(t:Transaction,amount:number,c:string)=>transactionRow(t,data,amount,c,f);
  if(target.kind==='accounts'){
@@ -89,6 +91,16 @@ export function buildRecordReport(target:ReportTarget,data:Data,period:ReportPer
   if(r.due)tiles.push({label:tr('Next due'),value:displayDate(r.due)});
   return {title:r.name,subtitle:tr('Recurring bill report'),period:label,tiles,tables:[fieldTable(tr('Payment history'),rows.map(t=>txRow(t,-t.amount,currencyOf(t))),['date','description','account','amount'],f,empty)]};
  }
+ if(target.kind==='loans'||target.kind==='payLater'){
+  const r=(data[target.kind]||[]).find(x=>x.id===target.id);if(!r)return null;
+  const s=creditSummary(r,today,target.kind),rows=(r.payments||[]).filter(p=>within(p.date,period)).sort((x,y)=>y.date.localeCompare(x.date));
+  const tiles=[{label:tr('Original amount'),value:money(r.amount)},{label:tr('Total paid'),value:money(s.paid)},{label:tr('Outstanding balance'),value:money(s.outstanding)},{label:tr('Status'),value:tr(s.status)},{label:tr('Remaining installments'),value:String(s.remaining)}];
+  if(s.nextDue)tiles.push({label:tr('Next due'),value:displayDate(s.nextDue)});
+  if(r.interestRate!==undefined)tiles.push({label:tr('Interest rate'),value:`${r.interestRate}%`});
+  const who=target.kind==='loans'?r.party:r.provider;
+  return {title:who?`${r.name} · ${who}`:r.name,subtitle:tr(target.kind==='loans'?'Loan statement':'Pay Later statement'),period:label,tiles,tables:[fieldTable(tr('Payment history'),rows.map(p=>({values:{date:displayDate(p.date),description:p.note||tr('Payment'),type:tr(p.void?'Reversed':'Payment'),amount:p.void?`(${money(p.amount)})`:money(p.amount)}})),['date','description','type','amount'],f,empty),...(s.schedule.length>1?[{title:tr('Installment schedule'),columns:[{label:tr('Date'),width:.4},{label:tr('Status'),width:.3},{label:tr('Amount'),width:.3,end:true}],rows:s.schedule.map(x=>({cells:[displayDate(x.date),tr(x.paid?'Paid':'Pending'),money(x.amount)]}))}]:[])]};
+ }
+ if(target.kind==='summary')return buildSummaryReport(target.id,data,period,f,today,filterCategory);
  const b=data.budgets.find(x=>x.id===target.id);if(!b)return null;
  const category=b.category||b.name,matching=data.transactions.filter(t=>t.type==='expense'&&!t.partyId&&currencyOf(t)===currency&&categoryAmount(t,category)>0);
  const rows=matching.filter(t=>within(t.date,period)).sort((x,y)=>y.date.localeCompare(x.date));

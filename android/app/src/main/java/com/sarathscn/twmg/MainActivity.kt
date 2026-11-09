@@ -25,6 +25,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.CookieManager
+import androidx.core.content.FileProvider
 import android.webkit.JavascriptInterface
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
@@ -518,6 +519,21 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface fun captureBlocked(): Boolean = safe(false) { this@MainActivity.captureBlocked() }
         @JavascriptInterface fun setCaptureBlocked(blocked: Boolean) = safe(Unit) { prefs.edit().putBoolean(KEY_BLOCK_CAPTURE, blocked).apply(); runOnUiThread { applySecureFlag() } }
+
+        /** Opens the system share sheet for a report. Only the latest file is kept, in private cache. */
+        @JavascriptInterface fun shareFile(name: String, dataUrl: String) = safe(Unit) {
+            val safeName = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(120).ifBlank { "twmg-report.pdf" }
+            val mime = dataUrl.substringAfter("data:", "").substringBefore(';').substringBefore(',').ifBlank { "application/pdf" }
+            val uri = runCatching {
+                val dir = File(cacheDir, "shared").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+                val file = File(dir, safeName).apply { writeBytes(Base64.decode(dataUrl.substringAfter(','), Base64.DEFAULT)) }
+                FileProvider.getUriForFile(this@MainActivity, "$packageName.files", file)
+            }.getOrNull()
+            runOnUiThread {
+                val shared = uri != null && runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), null)) }.isSuccess
+                if (!shared) Toast.makeText(this@MainActivity, R.string.save_failed, Toast.LENGTH_LONG).show()
+            }
+        }
 
         /** Receives files the web app downloads (CSV export, JSON backup) and saves them to Downloads. */
         @JavascriptInterface fun saveFile(name: String, dataUrl: String) = safe(Unit) {

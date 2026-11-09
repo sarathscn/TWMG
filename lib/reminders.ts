@@ -1,8 +1,9 @@
 import {balance,type Data} from './finance.ts';
+import {creditSummary} from './credit.ts';
 // Financial reminders shared by the web app and the /api/reminders endpoint the Android app polls.
 // Each reminder is an open obligation; anything already completed is simply not returned, which is
 // how a phone learns to stop notifying.
-export type ReminderKind='card'|'recurring'|'debt'|'shared'|'goal';
+export type ReminderKind='card'|'recurring'|'debt'|'shared'|'goal'|'loan'|'payLater';
 export type Reminder={id:string;kind:ReminderKind;name:string;due:string;amount:number;currency:string;view:string};
 export const LEAD_DAYS=7,OVERDUE_DAYS=30,MAX_CYCLES=36;
 const iso=(d:Date)=>d.toISOString().slice(0,10);
@@ -11,7 +12,7 @@ export const addDays=(s:string,n:number)=>{const d=parse(s);d.setUTCDate(d.getUT
 // Same day next/previous period, clamped to month end (31 Jan + 1 month = 28/29 Feb).
 export function addPeriod(s:string,type:string|undefined,n:number){
  if(type==='Weekly')return addDays(s,7*n);
- const d=parse(s),day=d.getUTCDate(),months=type==='Yearly'?12*n:n;
+ const d=parse(s),day=d.getUTCDate(),months=type==='Yearly'?12*n:type==='Quarterly'?3*n:n;
  const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+months,1));
  t.setUTCDate(Math.min(day,new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate()));
  return iso(t);
@@ -43,5 +44,6 @@ export function reminders(data:Data,baseCurrency:string,today:string,horizon=60)
  for(const d of data.debts){const left=d.amount-(d.paid||0);if(valid(d.due)&&left>0&&keep(d.due!))out.push({id:'debt:'+d.id,kind:'debt',name:d.name,due:d.due!,amount:left,currency:baseCurrency,view:'Debts'})}
  for(const g of data.shared){const left=g.amount-(g.paid||0);if(valid(g.due)&&left>0&&keep(g.due!))out.push({id:'shared:'+g.id,kind:'shared',name:g.name,due:g.due!,amount:left,currency:baseCurrency,view:'Shared expenses'})}
  for(const g of data.goals){const left=(g.target||0)-g.amount;if(valid(g.due)&&left>0&&keep(g.due!))out.push({id:'goal:'+g.id,kind:'goal',name:g.name,due:g.due!,amount:left,currency:baseCurrency,view:'Budgets & goals'})}
+ for(const kind of ['loans','payLater'] as const)for(const r of data[kind]||[]){const s=creditSummary(r,today,kind);if(s.nextDue&&keep(s.nextDue))out.push({id:kind+':'+r.id,kind:kind==='loans'?'loan':'payLater',name:r.name,due:s.nextDue,amount:Math.min(s.installmentAmount,s.outstanding),currency:baseCurrency,view:kind==='loans'?'Loans':'Pay Later'})}
  return out.sort((x,y)=>x.due.localeCompare(y.due)||x.id.localeCompare(y.id));
 }

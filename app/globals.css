@@ -572,3 +572,12 @@ tr.tx-row:active{background:var(--soft)}
 /* Fields that open a menu stay still when pressed. Buttons shrink on press, but a dropdown opens on that same press
    and takes its position and width from the field, so the menu appeared shrunken and then snapped out with it. */
 .themed-select:active:not(:disabled),.date-trigger:active:not(:disabled),.calendar-label:active:not(:disabled){transform:none}
+
+.credit-totals{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.credit-status.paid{color:var(--accent)}.credit-status.overdue{color:var(--danger);border-color:var(--danger-border);background:var(--danger-bg)}
+.credit-card h2 small{font-size:.5em;font-weight:500;color:var(--muted)}.credit-card .progress{height:6px;border-radius:99px;background:var(--soft);overflow:hidden;margin:8px 0}.credit-card .progress i{display:block;height:100%;background:var(--accent)}
+.credit-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.credit-facts dt{font-size:10px;color:var(--muted)}.credit-facts dd{margin:2px 0 0;font-size:12px;font-weight:600}
+.credit-payments{list-style:none;margin:12px 0 0;padding:0;border-top:1px solid var(--line)}.credit-payments li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.credit-payments small{display:block;color:var(--muted);font-size:11px}.credit-payments .reversed b{text-decoration:line-through;color:var(--muted)}
+.credit-pay-shortcuts{padding:8px 0}.form-grid .wide{grid-column:1/-1}
+.report-generate{padding:20px 22px;margin-bottom:22px}.report-generate h3{margin:0 0 4px}.report-generate p{margin:0 0 12px}.record-report-category{display:block;margin-top:12px}
+.legal-links{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin:12px 0 0;font-size:12px}.legal-links a,.legal-footer a,.legal-back{color:var(--accent)}.legal-consent{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}
+.legal-page{max-width:760px;margin:0 auto;padding:32px 22px 48px;line-height:1.65;font-size:15px;color:var(--text)}.legal-page h1{font-size:30px;margin:18px 0 4px}.legal-page h2{font-size:17px;margin:26px 0 6px}.legal-page p,.legal-page ul{margin:0 0 10px}.legal-page ul{padding-inline-start:20px}.legal-updated{color:var(--muted);font-size:13px}.legal-footer{display:flex;gap:18px;margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:13px}

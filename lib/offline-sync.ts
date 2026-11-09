@@ -3,7 +3,7 @@ import type {Data} from './finance.ts';
 // (1) the last data it downloaded and (2) a queue of changes not yet uploaded. What the user sees
 // is always server data with the queued changes applied on top, so an edit or delete shows at once
 // and a queued delete can't "reappear" when fresh server data arrives.
-export const offlineKinds=['accounts','transactions','budgets','goals','debts','shared','recurring','parties','categories','paymentMethods'] as const;
+export const offlineKinds=['accounts','transactions','budgets','goals','debts','shared','recurring','parties','categories','paymentMethods','loans','payLater'] as const;
 export type OfflineKind=typeof offlineKinds[number];
 export type SyncOp={opId:string;user:string;profile:string;kind:OfflineKind;action:'save'|'delete';id:string;value?:Record<string,unknown>;base?:string|null;createdAt:number;state?:'pending'|'failed';error?:string;conflict?:boolean};
 export type Changes={upserts:{id:string;kind:string;data:Record<string,unknown>}[];deletes:{id:string;kind?:string}[]};

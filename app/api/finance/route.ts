@@ -8,10 +8,12 @@ import {countryForCurrency} from '../../../lib/countries';
 import {recordColors} from '../../../lib/card-options';
 import {categorySchema,paymentMethodSchema,defaultMethods} from '../../../lib/preferences';
 import {profileDetailsSchema,countryCurrencies} from '../../../lib/profile';
-import {accountSchema as account,itemSchema as item,sharedSchema,partySchema} from '../../../lib/record-schemas';
+import {accountSchema as account,itemSchema as item,sharedSchema,partySchema,loanSchema,payLaterSchema} from '../../../lib/record-schemas';
+import {creditChangeError,type CreditRecord} from '../../../lib/credit';
+import {allowRequest,tooManyRequests} from '../../../lib/rate-limit';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
-const kinds=['accounts','transactions','budgets','goals','debts','shared','recurring','categories','paymentMethods','parties'] as const;
+const kinds=['accounts','transactions','budgets','goals','debts','shared','recurring','categories','paymentMethods','parties','loans','payLater'] as const;
 const money=z.number().int().safe().nonnegative().max(1e12);
 const label=z.string().trim().min(1).max(120);
 const transaction=z.object({id:label,name:label,type:z.enum(['income','expense','transfer']),amount:money.positive(),account:label,to:z.string().optional(),received:money.optional(),category:label,partyId:label.optional(),debtAction:z.enum(['lend','borrow','collect','repay']).optional(),sharedGroupId:label.optional(),recurringId:label.optional(),paidBy:z.string().max(120).optional(),participants:z.array(label).min(1).max(100).optional(),paymentMethod:z.string().max(120).optional(),paymentMethodName:z.string().max(80).optional(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/,'Choose a valid time.').optional(),notes:z.string().max(2000).optional(),tags:z.string().max(250).optional(),splits:z.array(z.object({category:label,amount:money.positive()})).max(20).optional()});
@@ -65,7 +67,7 @@ export async function GET(req:Request){try{
 }catch(e){return failure(e)}}
 export async function POST(req:Request){try{
  if(!sameOrigin(req))throw Error('Invalid request origin');
- const {db,user}=await context();const raw=await req.text();if(raw.length>200000)throw Error('Request too large');
+ const {db,user}=await context();if(!allowRequest('finance:'+user.id,240))return tooManyRequests();const raw=await req.text();if(raw.length>200000)throw Error('Request too large');
  const body=z.object({action:z.string().optional(),profile:z.string().optional(),kind:z.string().optional(),id:z.string().optional(),value:z.record(z.string(),z.unknown()).optional(),base:z.string().max(40).optional()}).parse(JSON.parse(raw));
  if(body.action==='profile_update'||body.action==='profile'){
  const p=profileDetailsSchema.parse(body.value);
@@ -75,7 +77,7 @@ export async function POST(req:Request){try{
  }
  const profile=z.string().uuid().parse(body.profile),profileRow=await owned(db,profile,user.id);
  if(body.action==='import'){
- const input=z.object({accounts:z.array(account).max(50),transactions:z.array(transaction).max(150),budgets:z.array(item).max(50),goals:z.array(item).max(50),debts:z.array(item).max(50),shared:z.array(sharedSchema).max(50),recurring:z.array(item).max(50),parties:z.array(partySchema).max(100).optional(),categories:z.array(categorySchema).max(100).optional(),paymentMethods:z.array(paymentMethodSchema).max(100).optional()}).parse(body.value?.data);
+ const input=z.object({accounts:z.array(account).max(50),transactions:z.array(transaction).max(150),budgets:z.array(item).max(50),goals:z.array(item).max(50),debts:z.array(item).max(50),shared:z.array(sharedSchema).max(50),recurring:z.array(item).max(50),parties:z.array(partySchema).max(100).optional(),loans:z.array(loanSchema).max(100).optional(),payLater:z.array(payLaterSchema).max(100).optional(),categories:z.array(categorySchema).max(100).optional(),paymentMethods:z.array(paymentMethodSchema).max(100).optional()}).parse(body.value?.data);
  const rows=Object.entries(input).flatMap(([kind,list])=>(list||[]).map(value=>({kind,value})));if(rows.length>200)throw Error('Import up to 200 records at a time.');const linkIds=new Map(rows.filter(r=>['parties','shared','recurring'].includes(r.kind)).map(r=>[r.value.id,crypto.randomUUID()]));const transactionIds=new Map(input.transactions.map(t=>[t.id,crypto.randomUUID()]));const methodIds=new Map((input.paymentMethods||[]).map(m=>[m.id,crypto.randomUUID()]));const ids=new Map(input.accounts.map(a=>[a.id,crypto.randomUUID()]));if(ids.size!==input.accounts.length)throw Error('Duplicate account identifiers in backup.');input.transactions.forEach(t=>validateTransaction(t,input.accounts));
  const mapped=rows.map(({kind,value})=>{const id=kind==='accounts'?ids.get(value.id)!:kind==='paymentMethods'?methodIds.get(value.id)!:kind==='transactions'?transactionIds.get(value.id)!:linkIds.get(value.id)||crypto.randomUUID(),tx=value as Transaction;return{id,profile,kind,data:{...value,id,...(kind==='parties'&&(value as any).sharedGroupIds?{sharedGroupIds:(value as any).sharedGroupIds.map((g:string)=>linkIds.get(g)).filter(Boolean)}:{}),...(kind==='shared'?{expenses:(value as any).expenses?.map((e:any)=>({...e,transactionId:e.transactionId?transactionIds.get(e.transactionId):undefined}))}:{}),...(kind==='transactions'?{partyId:tx.partyId?linkIds.get(tx.partyId):undefined,sharedGroupId:tx.sharedGroupId?linkIds.get(tx.sharedGroupId):undefined,recurringId:tx.recurringId?linkIds.get(tx.recurringId):undefined,account:ids.get(tx.account),to:tx.to?ids.get(tx.to):undefined,paymentMethod:tx.paymentMethod?methodIds.get(tx.paymentMethod):undefined}:{})}}});const {error}=await db.from('records').insert(mapped);check(error);return Response.json({ok:true});
  }
@@ -103,8 +105,9 @@ export async function POST(req:Request){try{
   const gone=before&&Array.isArray(raw.memberNames)?removedMembers(groupMembers(before),raw.memberNames):[];
   if(gone.length&&Array.isArray(raw.expenses))raw.expenses=withoutMembers(raw.expenses,gone);
   groupSync={before,data,transactions:[]};}
- const value=(kind==='parties'?partySchema:kind==='categories'?categorySchema:kind==='paymentMethods'?paymentMethodSchema:kind==='accounts'?account:kind==='transactions'?transaction:kind==='shared'?sharedSchema:item).parse({...body.value,id:body.value?.id||crypto.randomUUID()});
+ const value=(kind==='loans'?loanSchema:kind==='payLater'?payLaterSchema:kind==='parties'?partySchema:kind==='categories'?categorySchema:kind==='paymentMethods'?paymentMethodSchema:kind==='accounts'?account:kind==='transactions'?transaction:kind==='shared'?sharedSchema:item).parse({...body.value,id:body.value?.id||crypto.randomUUID()});
  if(groupSync){const g=value as Item;for(const t of groupSync.data.transactions as Transaction[]){if(t.sharedGroupId!==g.id)continue;const e=g.expenses?.find(x=>x.transactionId===t.id);if(e?.participants&&JSON.stringify(e.participants)!==JSON.stringify(t.participants))groupSync.transactions.push({...t,participants:e.participants});}}
+ if(kind==='loans'||kind==='payLater'){const data=await load(db,profile),problem=creditChangeError(data[kind].find(x=>x.id===value.id) as CreditRecord|undefined,value as unknown as CreditRecord);if(problem)throw Error(problem);}
  if(kind==='parties'){const data=await load(db,profile),existing=data.parties.find((p:Party)=>p.id===value.id) as Party|undefined,v=value as Party;
   // Group links are managed by the server; editing a party by hand keeps it even after its groups go.
   if(existing?.sharedGroupIds?.length&&existing.name.trim().toLowerCase()!==v.name.trim().toLowerCase())throw Error('This person is a member of a shared group. Remove them from the group before renaming.');

@@ -65,7 +65,7 @@ export function sharedMemberBalances(group:Item){
  return names.map(name=>{let paid=0,share=0;for(const expense of entries){if(expense.paidBy===name)paid+=expense.amount;share+=splitSharedExpense(expense,names).find(s=>s.name===name)?.amount||0}return{name,paid,share,net:paid-share}});
 }
 export type Profile={id:string;name:string;country:string;currency:string;username?:string;bio?:string;avatar?:string;emoji?:string;color?:string};
-export type Data={accounts:Account[];transactions:Transaction[];budgets:Item[];goals:Item[];debts:Item[];shared:Item[];recurring:Item[];parties?:Party[];categories?:import('./preferences').Category[];paymentMethods?:import('./preferences').PaymentMethod[]};
+export type Data={accounts:Account[];transactions:Transaction[];budgets:Item[];goals:Item[];debts:Item[];shared:Item[];recurring:Item[];parties?:Party[];loans?:import('./credit').CreditRecord[];payLater?:import('./credit').CreditRecord[];categories?:import('./preferences').Category[];paymentMethods?:import('./preferences').PaymentMethod[]};
 export type LedgerKind='accounts'|'parties'|'shared'|'recurring';
 export const categories=['Food & dining','Shopping','Transport','Home & utilities','Entertainment','Health','Travel','Salary','Freelance','Other'];
 export function balance(a:Account,ts:Transaction[]){return a.opening+ts.reduce((s,t)=>s+(t.account===a.id?(t.type==='income'?t.amount:-t.amount):0)+(t.type==='transfer'&&t.to===a.id?(t.received??t.amount):0),0)}

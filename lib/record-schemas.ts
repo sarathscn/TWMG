@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {currencies,countries} from './countries.ts';
 import {cardTypes,hexColor,recordEmojis} from './card-options.ts';
+import {creditFrequencies,creditPaid} from './credit.ts';
 export const moneySchema=z.number().int().safe().nonnegative().max(1e12);
 const label=z.string().trim().min(1).max(120);
 export const appearance={color:z.string().regex(hexColor,'Choose a valid color.').transform(c=>c.toLowerCase()).optional(),emoji:z.enum(recordEmojis).optional()};
@@ -31,3 +32,14 @@ export const sharedSchema=itemSchema.extend({self:z.string().trim().min(1).max(8
   for(const e of g.expenses||[]){if(e.paidBy&&!g.memberNames.includes(e.paidBy))ctx.addIssue({code:'custom',message:'The payer must belong to this group.'});if(e.participants&&(new Set(e.participants).size!==e.participants.length||e.participants.some(n=>!g.memberNames!.includes(n))))ctx.addIssue({code:'custom',message:'Choose unique split members from this group.'});}
  }
 });
+
+// Loans and Pay Later. Only the original amount and the payments are accepted; a balance or status sent
+// by a client is dropped here, because both are always worked out from the payments.
+const creditPayment=z.object({id:label,date,amount:moneySchema.positive(),note:z.string().trim().max(200).optional(),void:z.boolean().optional()});
+const creditBase=z.object({id:label,name:label,amount:moneySchema.positive(),description:z.string().trim().max(500).optional(),frequency:z.enum(creditFrequencies),installments:z.number().int().min(1).max(600).optional(),due:date,payments:z.array(creditPayment).max(1000).default([]),...appearance});
+function paymentsFit(r:{amount:number;payments:{id:string;amount:number;void?:boolean}[]},ctx:z.RefinementCtx){
+ if(new Set(r.payments.map(p=>p.id)).size!==r.payments.length)ctx.addIssue({code:'custom',message:'Each payment must be unique.'});
+ if(creditPaid(r as never)>r.amount)ctx.addIssue({code:'custom',message:'Payments cannot be more than the amount owed.'});
+}
+export const loanSchema=creditBase.extend({party:label,direction:z.enum(['borrowed','lent']),start:date,installment:moneySchema.positive().optional(),interestRate:z.number().min(0).max(1000).optional()}).superRefine((r,ctx)=>{paymentsFit(r,ctx);if(r.due<r.start)ctx.addIssue({code:'custom',message:'The due date must be after the start date.',path:['due']})});
+export const payLaterSchema=creditBase.extend({provider:label}).superRefine(paymentsFit);

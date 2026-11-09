@@ -15,6 +15,7 @@ type AndroidBridge = {
     appLockAvailable(): boolean;
     appLockEnabled(): boolean;
     setAppLockEnabled(enabled: boolean): void;
+    shareFile(name: string, dataUrl: string): void;
     captureBlocked(): boolean;
     setCaptureBlocked(blocked: boolean): void;
     remindersEnabled(): boolean;
